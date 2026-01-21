@@ -22,7 +22,7 @@ public class Producer {
   @Bean
   public Supplier<Message<CreateOrderMapper>> subscribeOperationFileGenerationWithKafkaBindings() {
     final var messageWrapper =  subscribeOperationFileGenerationWithKafkaBindings.subscribeOperationFileGenerationWithKafkaBindings();
-    return () -> MessageBuilder.withPayload((CreateOrderMapper) messageWrapper.getPayload()).setHeader(KafkaHeaders.MESSAGE_KEY, (String) messageWrapper.getKey()).build();
+    return () -> MessageBuilder.withPayload((CreateOrderMapper) messageWrapper.getPayload()).setHeader(KafkaHeaders.KEY, (String) messageWrapper.getKey()).build();
   }
 
 

@@ -24,6 +24,8 @@ public class TemplateIndexConstants extends CommonTemplateIndexConstants {
 
   public static final String KAFKA_BINDINGS_FTLH = "WithKafkaBindings.ftlh";
 
+  public static final String TEMPLATE_SCHEMA_REGISTRY_CONFIG = "templateSchemaRegistryConfig.ftlh";
+
   protected TemplateIndexConstants() {
   }
 }

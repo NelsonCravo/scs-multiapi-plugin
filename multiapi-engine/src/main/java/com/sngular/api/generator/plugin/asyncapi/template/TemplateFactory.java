@@ -49,6 +49,8 @@ public class TemplateFactory extends CommonTemplateFactory {
 
   private String streamBridgeFilePath = null;
 
+  private String schemaRegistryFilePath = null;
+
   private String supplierClassName = null;
 
   private String streamBridgeClassName = null;
@@ -78,6 +80,10 @@ public class TemplateFactory extends CommonTemplateFactory {
 
     for (final var method : streamBridgeMethods) {
       fillTemplate(streamBridgeFilePath, streamBridgeClassName, checkTemplate(method.getBindingType(), TemplateIndexConstants.TEMPLATE_API_STREAM_BRIDGE));
+    }
+
+    if (schemaRegistryFilePath != null) {
+      fillTemplate(schemaRegistryFilePath, "SchemaRegistryConfig", TemplateIndexConstants.TEMPLATE_SCHEMA_REGISTRY_CONFIG);
     }
 
     generateTemplates();
@@ -149,37 +155,140 @@ public class TemplateFactory extends CommonTemplateFactory {
     this.streamBridgeClassName = className;
   }
 
-  public final void addSupplierMethod(final String operationId, final String classNamespace, final String bindings, final String bindingType) {
+  public final void addSupplierMethod(
+      final String operationId, final String classNamespace, final String channelName, final String bindings, final String bindingType, final String action,
+      final String serverBindings,
+      final String channelBindings, final String operationBindings, final String messageBindings, final String securityRequirements, final String securitySchemes,
+      final String channelParameters, final String correlationId, final String causationId, final String replyTo, final String bindingVersion, final Integer mqttQos,
+      final Boolean mqttRetain, final String websocketMethod, final String websocketSubprotocol, final String websocketHeaders, final String kafkaSaslMechanism,
+      final String kafkaSecurityProtocol, final Integer kafkaPartition, final String kafkaHeaders, final String kafkaTopicConfiguration, final String schemaFormat,
+      final String schemaVersion, final String examples, final Boolean cloudEvent, final String keySelector) {
     publishMethods.add(MethodObject
                            .builder()
                            .operationId(operationId)
                            .classNamespace(classNamespace)
+                           .channelName(channelName)
                            .type("publish")
+                           .action(action)
                            .keyClassNamespace(bindings)
-                           .bindingType(bindingType)
+                            .bindingType(bindingType)
+                            .serverBindings(serverBindings)
+                           .channelBindings(channelBindings)
+                           .operationBindings(operationBindings)
+                           .messageBindings(messageBindings)
+                           .securityRequirements(securityRequirements)
+                           .securitySchemes(securitySchemes)
+                           .channelParameters(channelParameters)
+                           .bindingVersion(bindingVersion)
+                           .mqttQos(mqttQos)
+                           .mqttRetain(mqttRetain)
+                           .websocketMethod(websocketMethod)
+                           .websocketSubprotocol(websocketSubprotocol)
+                           .websocketHeaders(websocketHeaders)
+                           .kafkaSaslMechanism(kafkaSaslMechanism)
+                           .kafkaSecurityProtocol(kafkaSecurityProtocol)
+                           .kafkaPartition(kafkaPartition)
+                           .kafkaHeaders(kafkaHeaders)
+                           .kafkaTopicConfiguration(kafkaTopicConfiguration)
+                           .schemaFormat(schemaFormat)
+                           .schemaVersion(schemaVersion)
+                           .correlationId(correlationId)
+                           .causationId(causationId)
+                           .replyTo(replyTo)
+                           .examples(examples)
+                           .cloudEvent(cloudEvent)
+                           .keySelector(keySelector)
                            .build());
   }
 
-  public final void addStreamBridgeMethod(final String operationId, final String classNamespace, final String channelName, final String bindings, final String bindingType) {
+  public final void addStreamBridgeMethod(
+      final String operationId, final String classNamespace, final String channelName, final String bindings, final String bindingType, final String action,
+      final String serverBindings, final String channelBindings, final String operationBindings, final String messageBindings, final String securityRequirements,
+      final String securitySchemes, final String channelParameters, final String correlationId, final String causationId, final String replyTo, final String bindingVersion,
+      final Integer mqttQos, final Boolean mqttRetain, final String websocketMethod, final String websocketSubprotocol, final String websocketHeaders,
+      final String kafkaSaslMechanism, final String kafkaSecurityProtocol, final Integer kafkaPartition, final String kafkaHeaders, final String kafkaTopicConfiguration,
+      final String schemaFormat, final String schemaVersion, final String examples, final Boolean cloudEvent, final String keySelector) {
     streamBridgeMethods.add(MethodObject
                                 .builder()
                                 .operationId(operationId)
                                 .channelName(channelName)
                                 .classNamespace(classNamespace)
                                 .type("streamBridge")
+                                .action(action)
                                 .keyClassNamespace(bindings)
                                 .bindingType(bindingType)
+                                .serverBindings(serverBindings)
+                                .channelBindings(channelBindings)
+                                .operationBindings(operationBindings)
+                                .messageBindings(messageBindings)
+                                .securityRequirements(securityRequirements)
+                                .securitySchemes(securitySchemes)
+                                .channelParameters(channelParameters)
+                                .bindingVersion(bindingVersion)
+                                .mqttQos(mqttQos)
+                                .mqttRetain(mqttRetain)
+                                .websocketMethod(websocketMethod)
+                                .websocketSubprotocol(websocketSubprotocol)
+                                .websocketHeaders(websocketHeaders)
+                                .kafkaSaslMechanism(kafkaSaslMechanism)
+                                .kafkaSecurityProtocol(kafkaSecurityProtocol)
+                                .kafkaPartition(kafkaPartition)
+                                .kafkaHeaders(kafkaHeaders)
+                                .kafkaTopicConfiguration(kafkaTopicConfiguration)
+                                .schemaFormat(schemaFormat)
+                                .schemaVersion(schemaVersion)
+                                .correlationId(correlationId)
+                                .causationId(causationId)
+                                .replyTo(replyTo)
+                                .examples(examples)
+                                .cloudEvent(cloudEvent)
+                                .keySelector(keySelector)
                                 .build());
   }
 
-  public final void addSubscribeMethod(final String operationId, final String classNamespace, final String bindings, final String bindingType) {
+  public final void addSubscribeMethod(
+      final String operationId, final String classNamespace, final String channelName, final String bindings, final String bindingType, final String action,
+      final String serverBindings,
+      final String channelBindings, final String operationBindings, final String messageBindings, final String securityRequirements, final String securitySchemes,
+      final String channelParameters, final String correlationId, final String causationId, final String replyTo, final String bindingVersion, final Integer mqttQos,
+      final Boolean mqttRetain, final String websocketMethod, final String websocketSubprotocol, final String websocketHeaders, final String kafkaSaslMechanism,
+      final String kafkaSecurityProtocol, final Integer kafkaPartition, final String kafkaHeaders, final String kafkaTopicConfiguration, final String schemaFormat,
+      final String schemaVersion, final String examples, final Boolean cloudEvent, final String keySelector) {
     subscribeMethods.add(MethodObject
                              .builder()
                              .operationId(operationId)
                              .classNamespace(classNamespace)
+                             .channelName(channelName)
                              .type("subscribe")
+                             .action(action)
                              .keyClassNamespace(bindings)
                              .bindingType(bindingType)
+                             .serverBindings(serverBindings)
+                             .channelBindings(channelBindings)
+                             .operationBindings(operationBindings)
+                             .messageBindings(messageBindings)
+                             .securityRequirements(securityRequirements)
+                             .securitySchemes(securitySchemes)
+                             .channelParameters(channelParameters)
+                             .bindingVersion(bindingVersion)
+                             .mqttQos(mqttQos)
+                             .mqttRetain(mqttRetain)
+                             .websocketMethod(websocketMethod)
+                             .websocketSubprotocol(websocketSubprotocol)
+                             .websocketHeaders(websocketHeaders)
+                             .kafkaSaslMechanism(kafkaSaslMechanism)
+                             .kafkaSecurityProtocol(kafkaSecurityProtocol)
+                             .kafkaPartition(kafkaPartition)
+                             .kafkaHeaders(kafkaHeaders)
+                             .kafkaTopicConfiguration(kafkaTopicConfiguration)
+                             .schemaFormat(schemaFormat)
+                             .schemaVersion(schemaVersion)
+                             .correlationId(correlationId)
+                             .causationId(causationId)
+                             .replyTo(replyTo)
+                             .examples(examples)
+                             .cloudEvent(cloudEvent)
+                             .keySelector(keySelector)
                              .build());
   }
 
@@ -198,8 +307,10 @@ public class TemplateFactory extends CommonTemplateFactory {
   public final void calculateJavaEEPackage(final Integer springBootVersion) {
     if (3 <= springBootVersion) {
       addToRoot("javaEEPackage", "jakarta");
+      addToRoot("kafkaKeyHeader", "KEY");
     } else {
       addToRoot("javaEEPackage", "javax");
+      addToRoot("kafkaKeyHeader", "MESSAGE_KEY");
     }
   }
 
@@ -253,10 +364,14 @@ public class TemplateFactory extends CommonTemplateFactory {
 
   public final void setSupplierFilePath(final Path path) {
     this.supplierFilePath = path.toString();
+    if (this.schemaRegistryFilePath == null) {
+      this.schemaRegistryFilePath = path.toString();
+    }
   }
 
   public final void setStreamBridgeFilePath(final Path path) {
     this.streamBridgeFilePath = path.toString();
+    this.schemaRegistryFilePath = path.toString();
   }
 
   public final void setSubscribeFilePath(final Path path) {

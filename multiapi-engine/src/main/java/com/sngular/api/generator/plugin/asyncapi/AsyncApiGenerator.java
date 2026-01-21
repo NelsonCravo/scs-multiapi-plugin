@@ -27,12 +27,14 @@ import com.sngular.api.generator.plugin.common.files.ClasspathFileLocation;
 import com.sngular.api.generator.plugin.common.files.DirectoryFileLocation;
 import com.sngular.api.generator.plugin.common.files.FileLocation;
 import com.sngular.api.generator.plugin.common.tools.PathUtil;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 
-@Slf4j
 public class AsyncApiGenerator {
+
+  private static final Logger log = LoggerFactory.getLogger(AsyncApiGenerator.class);
 
   private final Integer springBootVersion;
 

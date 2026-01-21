@@ -58,7 +58,7 @@ public final class ApiTool {
   }
 
   public static JsonNode getNode(final JsonNode schema, final String nodeName) {
-    return schema.get(nodeName);
+    return schema != null ? schema.get(nodeName) : null;
   }
 
   public static String getRefValue(final JsonNode schema) {

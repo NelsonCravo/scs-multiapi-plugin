@@ -33,6 +33,10 @@ public class SchemaFieldObjectProperties {
 
   private String format = null;
 
+  private Integer minProperties = null;
+
+  private Integer maxProperties = null;
+
   private Set<String> properties;
 
   public SchemaFieldObjectProperties() {
@@ -104,6 +108,20 @@ public class SchemaFieldObjectProperties {
     this.format = format;
     if (Objects.nonNull(format)) {
       properties.add("Format");
+    }
+  }
+
+  public void setMinProperties(final Integer minProperties) {
+    this.minProperties = minProperties;
+    if (Objects.nonNull(minProperties)) {
+      properties.add("MinProperties");
+    }
+  }
+
+  public void setMaxProperties(final Integer maxProperties) {
+    this.maxProperties = maxProperties;
+    if (Objects.nonNull(maxProperties)) {
+      properties.add("MaxProperties");
     }
   }
 

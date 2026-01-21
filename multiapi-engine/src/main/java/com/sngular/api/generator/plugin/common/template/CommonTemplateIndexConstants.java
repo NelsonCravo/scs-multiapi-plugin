@@ -66,9 +66,19 @@ public abstract class CommonTemplateIndexConstants {
 
   public static final String TEMPLATE_MIN_ITEMS_VALIDATOR_ANNOTATION = "templateMinItemsValidator.ftlh";
 
+  public static final String TEMPLATE_MAX_PROPERTIES_ANNOTATION = "templateMaxProperties.ftlh";
+
+  public static final String TEMPLATE_MAX_PROPERTIES_VALIDATOR_ANNOTATION = "templateMaxPropertiesValidator.ftlh";
+
+  public static final String TEMPLATE_MIN_PROPERTIES_ANNOTATION = "templateMinProperties.ftlh";
+
+  public static final String TEMPLATE_MIN_PROPERTIES_VALIDATOR_ANNOTATION = "templateMinPropertiesValidator.ftlh";
+
   public static final String TEMPLATE_UNIQUE_ITEMS_ANNOTATION = "templateUniqueItems.ftlh";
 
   public static final String TEMPLATE_UNIQUE_ITEMS_VALIDATOR_ANNOTATION = "templateUniqueItemsValidator.ftlh";
+
+  public static final String TEMPLATE_COMBINATOR_INTERFACE = "templateCombinatorInterface.ftlh";
 
   protected CommonTemplateIndexConstants() {
   }

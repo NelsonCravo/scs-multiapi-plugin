@@ -1,6 +1,17 @@
 <#ftl output_format="plainText">
 package <#if packageApi??>${packageApi}<#elseif package??>${package}</#if>;
 
+/**
+ * <#if docTitle?has_content>${docTitle}</#if><#if docVersion?has_content> (v${docVersion})</#if>
+ * <#if docDescription?has_content>${docDescription}</#if>
+ * <#if docContactName?has_content>Contact: ${docContactName}<#if docContactEmail?has_content> - ${docContactEmail}</#if><#if docContactUrl?has_content> (${docContactUrl})</#if></#if>
+ * <#if docLicenseName?has_content>License: ${docLicenseName}<#if docLicenseUrl?has_content> (${docLicenseUrl})</#if></#if>
+ * <#if docExternalDocsUrl?has_content>External Docs: ${docExternalDocsUrl}<#if docExternalDocsDescription?has_content> - ${docExternalDocsDescription}</#if></#if>
+ * <#if docTags?has_content>Tags: ${docTags?join(", ")}</#if>
+ * <#if docServers?has_content>Servers: <#list docServers as s>${s.url}<#if s.security?has_content> [security: ${s.security?join(", ")}]</#if><#if s?has_next>, </#if></#list></#if>
+ * <#if docExtensions?has_content>Extensions: ${docExtensions?keys?join(", ")}</#if>
+ */
+
 import java.util.List;
 import java.util.Map;
 import java.nio.charset.StandardCharsets;

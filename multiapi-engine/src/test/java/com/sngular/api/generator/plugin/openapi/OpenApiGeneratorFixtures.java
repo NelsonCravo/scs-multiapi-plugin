@@ -588,7 +588,8 @@ public final class OpenApiGeneratorFixtures {
         ASSETS_PATH + "testApi/ApiErrorDTO.java",
         ASSETS_PATH + "testApi/ApiTestAllOfDTO.java",
         ASSETS_PATH + "testApi/ApiTestDTO.java",
-        ASSETS_PATH + "testApi/ApiTestInfoDTO.java"
+        ASSETS_PATH + "testApi/ApiTestInfoDTO.java",
+        ASSETS_PATH + "testApi/IApiTestDTO.java"
 
     );
 
@@ -653,7 +654,8 @@ public final class OpenApiGeneratorFixtures {
         ASSETS_PATH + "lombok/ApiErrorDTO.java",
         ASSETS_PATH + "lombok/ApiTestAllOfDTO.java",
         ASSETS_PATH + "lombok/ApiTestDTO.java",
-        ASSETS_PATH + "lombok/ApiTestInfoDTO.java"
+        ASSETS_PATH + "lombok/ApiTestInfoDTO.java",
+        ASSETS_PATH + "lombok/IApiTestDTO.java"
 
     );
 

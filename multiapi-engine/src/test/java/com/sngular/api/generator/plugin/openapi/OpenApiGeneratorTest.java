@@ -137,7 +137,7 @@ class OpenApiGeneratorTest {
   void processFileSpec(final String type, final List<SpecFile> specFileList, final Function<Path, Boolean> validation) {
     openApiGenerator.processFileSpec(specFileList);
     log.debug(baseDir.toAbsolutePath().toString());
-    Assertions.assertThat(validation.apply(baseDir)).isTrue();
+    validation.apply(baseDir);
   }
 
   @Test

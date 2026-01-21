@@ -28,4 +28,60 @@ public class ProcessMethodResult {
 
   private String bindingType;
 
+  private String action;
+
+  private String channelName;
+
+  private String serverBindings;
+
+  private String channelBindings;
+
+  private String operationBindings;
+
+  private String messageBindings;
+
+  private String securityRequirements;
+
+  private String securitySchemes;
+
+  private String channelParameters;
+
+  private String bindingVersion;
+
+  private Integer mqttQos;
+
+  private Boolean mqttRetain;
+
+  private String websocketMethod;
+
+  private String websocketSubprotocol;
+
+  private String websocketHeaders;
+
+  private String kafkaSaslMechanism;
+
+  private String kafkaSecurityProtocol;
+
+  private Integer kafkaPartition;
+
+  private String kafkaHeaders;
+
+  private String kafkaTopicConfiguration;
+
+  private String schemaFormat;
+
+  private String schemaVersion;
+
+  private String correlationId;
+
+  private String causationId;
+
+  private String replyTo;
+
+  private String examples;
+
+  private Boolean cloudEvent;
+
+  private String keySelector;
+
 }

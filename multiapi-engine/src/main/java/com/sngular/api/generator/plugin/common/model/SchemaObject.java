@@ -32,6 +32,8 @@ public class SchemaObject {
 
   private String parentPackage;
 
+  private String schemaHash;
+
   public static final class SchemaObjectBuilder {
 
     private final List<String> importList = new ArrayList<>();

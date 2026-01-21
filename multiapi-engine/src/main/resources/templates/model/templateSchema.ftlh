@@ -129,13 +129,21 @@ import ${packageModel}.customvalidator.MinFloat;
 import ${packageModel}.customvalidator.MinDouble;
     </#if>
     </#if>
-    <#if  field.restrictions.maxItems?has_content && !(visited?contains("maxItems"))>
-    <#assign visited += "maxItems," />
+  <#if  field.restrictions.maxItems?has_content && !(visited?contains("maxItems"))>
+  <#assign visited += "maxItems," />
 import ${packageModel}.customvalidator.MaxItems;
     </#if>
     <#if  field.restrictions.minItems?has_content && !(visited?contains("minItems"))>
       <#assign visited += "minItems," />
 import ${packageModel}.customvalidator.MinItems;
+    </#if>
+    <#if  field.restrictions.maxProperties?has_content && !(visited?contains("maxProperties"))>
+      <#assign visited += "maxProperties," />
+import ${packageModel}.customvalidator.MaxProperties;
+    </#if>
+    <#if  field.restrictions.minProperties?has_content && !(visited?contains("minProperties"))>
+      <#assign visited += "minProperties," />
+import ${packageModel}.customvalidator.MinProperties;
     </#if>
     <#if  field.restrictions.format?has_content && !(visited?contains("format"))>
       <#assign visited += "format,"  />
@@ -164,7 +172,7 @@ import ${packageModel}.customvalidator.UniqueItems;
 </#list>
 
 @JsonDeserialize(builder = ${schema.className}.${schema.className}Builder.class)
-public class ${schema.className} {
+public class ${schema.className}<#if schema.schemaCombinator?has_content> implements I${schema.className}</#if> {
 
 <#list schema.fieldObjectList as field>
   @JsonProperty(value ="${calculateSafeName (field.baseName, "")}")
@@ -185,6 +193,12 @@ public class ${schema.className} {
   </#if>
   <#if field.restrictions.minItems?has_content>
   @MinItems(minimum = ${field.restrictions.minItems})
+  </#if>
+  <#if field.restrictions.maxProperties?has_content>
+  @MaxProperties(maximum = ${field.restrictions.maxProperties})
+  </#if>
+  <#if field.restrictions.minProperties?has_content>
+  @MinProperties(minimum = ${field.restrictions.minProperties})
   </#if>
   <#if field.restrictions.format?has_content>
   @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "${field.restrictions.format}")

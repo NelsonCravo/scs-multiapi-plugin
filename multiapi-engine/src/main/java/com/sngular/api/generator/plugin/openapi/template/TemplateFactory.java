@@ -8,9 +8,12 @@ package com.sngular.api.generator.plugin.openapi.template;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Objects;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.sngular.api.generator.plugin.common.template.CommonTemplateFactory;
 import com.sngular.api.generator.plugin.openapi.model.AuthObject;
 import com.sngular.api.generator.plugin.openapi.model.PathObject;
@@ -43,10 +46,89 @@ public class TemplateFactory extends CommonTemplateFactory {
     delFromRoot("authObject");
     delFromRoot("clientPackage");
     delFromRoot("javaEEPackage");
+    delFromRoot("docTitle");
+    delFromRoot("docVersion");
+    delFromRoot("docDescription");
+    delFromRoot("docContactName");
+    delFromRoot("docContactEmail");
+    delFromRoot("docContactUrl");
+    delFromRoot("docLicenseName");
+    delFromRoot("docLicenseUrl");
+    delFromRoot("docExternalDocsDescription");
+    delFromRoot("docExternalDocsUrl");
+    delFromRoot("docTags");
+    delFromRoot("docExtensions");
   }
 
   public final void fillTemplates() {
     generateTemplates();
+  }
+
+  public final void setDocumentMetadata(final JsonNode openAPI) {
+    if (openAPI == null || !openAPI.has("info")) {
+      return;
+    }
+    final var info = openAPI.get("info");
+    addToRoot("docTitle", info.path("title").asText(null));
+    addToRoot("docVersion", info.path("version").asText(null));
+    addToRoot("docDescription", info.path("description").asText(null));
+    if (info.has("contact")) {
+      final var contact = info.get("contact");
+      addToRoot("docContactName", contact.path("name").asText(null));
+      addToRoot("docContactEmail", contact.path("email").asText(null));
+      addToRoot("docContactUrl", contact.path("url").asText(null));
+    }
+    if (info.has("license")) {
+      final var license = info.get("license");
+      addToRoot("docLicenseName", license.path("name").asText(null));
+      addToRoot("docLicenseUrl", license.path("url").asText(null));
+    }
+    if (openAPI.has("externalDocs")) {
+      final var external = openAPI.get("externalDocs");
+      addToRoot("docExternalDocsDescription", external.path("description").asText(null));
+      addToRoot("docExternalDocsUrl", external.path("url").asText(null));
+    }
+    if (openAPI.has("tags")) {
+      final var tagsIt = openAPI.get("tags").elements();
+      final var tags = new java.util.ArrayList<String>();
+      while (tagsIt.hasNext()) {
+        final var tag = tagsIt.next();
+        if (tag.has("name")) {
+          tags.add(tag.get("name").asText());
+        }
+      }
+      addToRoot("docTags", tags);
+    }
+    final var extensions = new java.util.HashMap<String, String>();
+    info.fields().forEachRemaining(entry -> {
+      if (entry.getKey().startsWith("x-")) {
+        extensions.put(entry.getKey(), entry.getValue().toString());
+      }
+    });
+    openAPI.fields().forEachRemaining(entry -> {
+      if (entry.getKey().startsWith("x-")) {
+        extensions.put(entry.getKey(), entry.getValue().toString());
+      }
+    });
+    addToRoot("docExtensions", extensions.isEmpty() ? null : extensions);
+
+    if (openAPI.has("servers")) {
+      final var servers = new ArrayList<HashMap<String, Object>>();
+      openAPI.get("servers").forEach(server -> {
+        final var s = new HashMap<String, Object>();
+        s.put("url", server.path("url").asText(null));
+        s.put("description", server.path("description").asText(null));
+        if (server.has("security")) {
+          final var secNames = new ArrayList<String>();
+          server.get("security").forEach(sec -> sec.fieldNames().forEachRemaining(secNames::add));
+          s.put("security", secNames);
+        }
+        if (!s.isEmpty()) {
+          servers.add(s);
+        }
+      });
+      addToRoot("docServers", servers.isEmpty() ? null : servers);
+    }
   }
 
   public final void fillTemplateWebClient(final String filePathToSave) throws IOException {

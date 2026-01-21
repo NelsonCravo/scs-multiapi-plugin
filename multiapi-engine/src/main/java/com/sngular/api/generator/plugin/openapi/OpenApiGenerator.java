@@ -80,6 +80,7 @@ public class OpenApiGenerator {
 
   public final void processFileSpec(final List<SpecFile> specsListFile) {
     for (SpecFile specFile : specsListFile) {
+      resetClientState();
       processPackage(specFile.getApiPackage());
       processFile(specFile);
       createClients(specFile);
@@ -99,6 +100,8 @@ public class OpenApiGenerator {
 
     final JsonNode openAPI = OpenApiUtil.getPojoFromSpecFile(baseDir, specFile);
     final String clientPackage = specFile.getClientPackage();
+
+    templateFactory.setDocumentMetadata(openAPI);
 
     if (specFile.isCallMode()) {
       templateFactory.setWebClientPackageName(StringUtils.isNotBlank(clientPackage) ? clientPackage : DEFAULT_OPENAPI_CLIENT_PACKAGE);
@@ -190,6 +193,12 @@ public class OpenApiGenerator {
     }
   }
 
+  private void resetClientState() {
+    isWebClient = false;
+    isRestClient = false;
+    authentications.clear();
+  }
+
   private String processModelPackage(final String modelPackage) {
     var modelReturnPackage = "";
     if (StringUtils.isNotBlank(modelPackage)) {
@@ -250,15 +259,15 @@ public class OpenApiGenerator {
     final var schemaObjectIt = MapperContentUtil
                                    .mapComponentToSchemaObject(basicSchemaMap, schemaName, model, parentPackage, specFile, this.baseDir).iterator();
     if (schemaObjectIt.hasNext()) {
-      writeSchemaObject(specFile.isUseLombokModelAnnotation(), specFile.getModelPackage(), schemaName, schemaObjectIt.next());
+      writeSchemaObject(specFile.isUseLombokModelAnnotation(), modelPackage, schemaName, schemaObjectIt.next());
     }
-    schemaObjectIt.forEachRemaining(schemaObj -> writeSchemaObject(specFile.isUseLombokModelAnnotation(), specFile.getModelPackage(), null, schemaObj));
+    schemaObjectIt.forEachRemaining(schemaObj -> writeSchemaObject(specFile.isUseLombokModelAnnotation(), modelPackage, null, schemaObj));
 
   }
 
   private void writeSchemaObject(final boolean usingLombok, final String modelPackageReceived, final String keyClassName, final SchemaObject schemaObject) {
-    final var finalModelPackageReceived = StringUtils.defaultIfEmpty(modelPackageReceived, DEFAULT_OPENAPI_API_PACKAGE);
-    final var destinationPackage = StringUtils.defaultIfEmpty(finalModelPackageReceived, DEFAULT_OPENAPI_API_PACKAGE + SLASH + schemaObject.getParentPackage());
+    final var finalModelPackageReceived = StringUtils.defaultIfEmpty(modelPackageReceived, DEFAULT_OPENAPI_MODEL_PACKAGE);
+    final var destinationPackage = finalModelPackageReceived + SLASH + schemaObject.getParentPackage();
     templateFactory.addSchemaObject(finalModelPackageReceived, keyClassName, schemaObject, destinationPackage, usingLombok);
     templateFactory.checkRequiredOrCombinatorExists(schemaObject, usingLombok);
   }

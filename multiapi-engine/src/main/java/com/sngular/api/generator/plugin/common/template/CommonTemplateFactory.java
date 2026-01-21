@@ -164,6 +164,14 @@ public abstract class CommonTemplateFactory {
           fillTemplateCustom(filePathToSave, modelPackage, "MinItems", CommonTemplateIndexConstants.TEMPLATE_MIN_ITEMS_ANNOTATION,
                              "MinItemsValidator", CommonTemplateIndexConstants.TEMPLATE_MIN_ITEMS_VALIDATOR_ANNOTATION);
           break;
+        case "MaxProperties":
+          fillTemplateCustom(filePathToSave, modelPackage, "MaxProperties", CommonTemplateIndexConstants.TEMPLATE_MAX_PROPERTIES_ANNOTATION,
+                             "MaxPropertiesValidator", CommonTemplateIndexConstants.TEMPLATE_MAX_PROPERTIES_VALIDATOR_ANNOTATION);
+          break;
+        case "MinProperties":
+          fillTemplateCustom(filePathToSave, modelPackage, "MinProperties", CommonTemplateIndexConstants.TEMPLATE_MIN_PROPERTIES_ANNOTATION,
+                             "MinPropertiesValidator", CommonTemplateIndexConstants.TEMPLATE_MIN_PROPERTIES_VALIDATOR_ANNOTATION);
+          break;
         case "NotNull":
           fillTemplateCustom(filePathToSave, modelPackage, "NotNull", CommonTemplateIndexConstants.TEMPLATE_NOT_NULL_ANNOTATION,
                              "NotNullValidator", CommonTemplateIndexConstants.TEMPLATE_NOT_NULL_VALIDATOR_ANNOTATION);
@@ -181,11 +189,11 @@ public abstract class CommonTemplateFactory {
   @SuppressWarnings("checkstyle:CyclomaticComplexity")
   private Set<String> fillTemplateSchema(final ClassTemplate classTemplate, final String exceptionPackage)
       throws IOException {
-    final var propertiesSet = new HashSet<String>();
-    final var schemaObject = classTemplate.getClassSchema();
-    final var filePath = classTemplate.getFilePath();
-    if (Objects.nonNull(schemaObject) && Objects.nonNull(schemaObject.getFieldObjectList()) && !schemaObject.getFieldObjectList().isEmpty()) {
-      addToRoot("schema", schemaObject);
+      final var propertiesSet = new HashSet<String>();
+      final var schemaObject = classTemplate.getClassSchema();
+      final var filePath = classTemplate.getFilePath();
+      if (Objects.nonNull(schemaObject) && Objects.nonNull(schemaObject.getFieldObjectList()) && !schemaObject.getFieldObjectList().isEmpty()) {
+        addToRoot("schema", schemaObject);
       final String templateName = getTemplateName(classTemplate);
       if (Objects.nonNull(classTemplate.getModelPackage())) {
         addToRoot("packageModel", classTemplate.getModelPackage());
@@ -194,6 +202,9 @@ public abstract class CommonTemplateFactory {
         addToRoot(EXCEPTION_PACKAGE, exceptionPackage);
       }
       fillTemplate(filePath.toString(), schemaObject.getClassName(), templateName);
+      if (hasCombinator(schemaObject)) {
+        fillTemplateCombinatorInterface(classTemplate.getPropertiesPath(), classTemplate.getModelPackage(), schemaObject.getClassName());
+      }
       for (SchemaFieldObject fieldObject : schemaObject.getFieldObjectList()) {
         propertiesSet.addAll(fieldObject.getRestrictions().getProperties());
         if (fieldObject.isRequired() && !classTemplate.isUseLombok()) {
@@ -207,6 +218,16 @@ public abstract class CommonTemplateFactory {
   public final void fillTemplateModelClassException(final String modelPackage) throws IOException {
     addToRoot(EXCEPTION_PACKAGE, modelPackage);
     writeTemplateToFile(CommonTemplateIndexConstants.TEMPLATE_MODEL_EXCEPTION, MapperUtil.packageToFolder(modelPackage) + SLASH + "exception", "ModelClassException");
+  }
+
+  private boolean hasCombinator(final SchemaObject schemaObject) {
+    return StringUtils.isNotBlank(schemaObject.getSchemaCombinator());
+  }
+
+  private void fillTemplateCombinatorInterface(final Path filePathToSave, final String modelPackage, final String className) throws IOException {
+    addToRoot("packageModel", modelPackage);
+    addToRoot("interfaceName", "I" + className);
+    writeTemplateToFile(CommonTemplateIndexConstants.TEMPLATE_COMBINATOR_INTERFACE, filePathToSave, "I" + className);
   }
 
   private void fillTemplateCustom(

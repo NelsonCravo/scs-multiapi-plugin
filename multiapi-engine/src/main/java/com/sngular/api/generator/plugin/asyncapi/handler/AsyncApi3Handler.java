@@ -9,6 +9,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
@@ -38,8 +39,12 @@ import com.sngular.api.generator.plugin.common.tools.SchemaUtil;
 import freemarker.template.TemplateException;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class AsyncApi3Handler extends BaseAsyncApiHandler {
+
+  private static final Logger LOGGER = LoggerFactory.getLogger(AsyncApi3Handler.class);
 
   public AsyncApi3Handler(
       final Integer springBootVersion,
@@ -73,7 +78,7 @@ public class AsyncApi3Handler extends BaseAsyncApiHandler {
           final JsonNode operation = entry.getValue();
           final String operationId = entry.getKey();
           final JsonNode channel = getChannelFromOperation(openApi, operation);
-          processOperation(fileParameter, ymlParent, entry, channel, operationId, operation, totalSchemas);
+          processOperation(fileParameter, ymlParent, entry, channel, operationId, operation, totalSchemas, openApi);
         }
         templateFactory.fillTemplates();
       } catch (final TemplateException | IOException e) {
@@ -111,7 +116,8 @@ public class AsyncApi3Handler extends BaseAsyncApiHandler {
   @Override
   protected void processOperation(
       final SpecFile fileParameter, final FileLocation ymlParent, final Entry<String, JsonNode> entry, final JsonNode channel,
-      final String operationId, final JsonNode operation, final Map<String, JsonNode> totalSchemas) throws IOException, TemplateException {
+      final String operationId, final JsonNode operation, final Map<String, JsonNode> totalSchemas, final JsonNode root) throws IOException, TemplateException {
+    this.currentRoot = root;
     final String action = ApiTool.getNodeAsString(operation, "action");
     if (!StringUtils.endsWithIgnoreCase(action, "send") && !StringUtils.endsWithIgnoreCase(action, "receive")) {
       throw new InvalidAsyncAPIException("Operation action must be either 'send' or 'receive'");
@@ -121,19 +127,22 @@ public class AsyncApi3Handler extends BaseAsyncApiHandler {
       final var operationObject = fileParameter.getConsumer();
       operationObject.setFilePath(fileParameter.getFilePath());
       checkClassPackageDuplicate(operationObject.getClassNamePostfix(), operationObject.getApiPackage());
-      processSubscribeMethod(operationId, operation, operationObject, ymlParent, totalSchemas);
+      final String channelName = extractChannelName(operation);
+      processSubscribeMethod(operationId, operation, operationObject, ymlParent, totalSchemas, channel, root, channelName);
       addProcessedClassesAndPackagesToGlobalVariables(operationObject.getClassNamePostfix(), operationObject.getApiPackage(), CONSUMER_CLASS_NAME);
     } else if (isValidOperation(fileParameter.getSupplier(), operationId, action, "send", Objects.isNull(fileParameter.getStreamBridge()))) {
       final var operationObject = fileParameter.getSupplier();
       operationObject.setFilePath(fileParameter.getFilePath());
       checkClassPackageDuplicate(operationObject.getClassNamePostfix(), operationObject.getApiPackage());
-      processSupplierMethod(operationId, operation, operationObject, ymlParent, totalSchemas);
+      final String channelName = extractChannelName(operation);
+      processSupplierMethod(operationId, operation, operationObject, ymlParent, totalSchemas, channel, root, channelName);
       addProcessedClassesAndPackagesToGlobalVariables(operationObject.getClassNamePostfix(), operationObject.getApiPackage(), SUPPLIER_CLASS_NAME);
     } else if (isValidOperation(fileParameter.getStreamBridge(), operationId, action, "send", Objects.isNull(fileParameter.getSupplier()))) {
       final var operationObject = fileParameter.getStreamBridge();
       operationObject.setFilePath(fileParameter.getFilePath());
       checkClassPackageDuplicate(operationObject.getClassNamePostfix(), operationObject.getApiPackage());
-      processStreamBridgeMethod(operationId, operation, operationObject, ymlParent, entry.getKey(), totalSchemas);
+      final String channelName = extractChannelName(operation);
+      processStreamBridgeMethod(operationId, operation, operationObject, ymlParent, StringUtils.defaultIfBlank(channelName, entry.getKey()), totalSchemas, channel, root);
       addProcessedClassesAndPackagesToGlobalVariables(operationObject.getClassNamePostfix(), operationObject.getApiPackage(), STREAM_BRIDGE_CLASS_NAME);
     }
   }
@@ -141,33 +150,90 @@ public class AsyncApi3Handler extends BaseAsyncApiHandler {
   @Override
   protected void processSupplierMethod(
       final String operationId, final JsonNode operation, final OperationParameterObject operationObject, final FileLocation ymlParent,
-      final Map<String, JsonNode> totalSchemas) throws IOException {
-    final ProcessMethodResult result = processMethod(operationId, operation, operationObject, ymlParent, totalSchemas);
+      final Map<String, JsonNode> totalSchemas, final JsonNode channel, final JsonNode root, final String channelName) throws IOException {
+    final JsonNode opWithTraits = applyTraits(operation);
+    final JsonNode channelWithTraits = applyTraits(channel);
+    final String channelBindings = stringify(ApiTool.getNode(channelWithTraits, BINDINGS));
+    final String operationBindings = stringify(ApiTool.getNode(opWithTraits, BINDINGS));
+    final String serverBindings = extractServerBindings(root, operation);
+    final var security = extractSecurity(root, operation);
+    final String channelParameters = stringify(ApiTool.getNode(channelWithTraits, "parameters"));
+    final ProcessMethodResult result = processMethod(operationId, opWithTraits, operationObject, ymlParent, totalSchemas, channelBindings, operationBindings, serverBindings,
+                                                     security.getLeft(), security.getRight(), channelParameters);
+    result.setChannelName(channelName);
+    if (StringUtils.isBlank(result.getReplyTo()) && StringUtils.isNotBlank(channelName)) {
+      result.setReplyTo(channelName + "-reply");
+    }
     fillTemplateFactory(operationId, result, totalSchemas, operationObject);
-    templateFactory.addSupplierMethod(result.getOperationId(), result.getNamespace(), result.getBindings(), result.getBindingType());
+    templateFactory.addSupplierMethod(result.getOperationId(), result.getNamespace(), result.getChannelName(), result.getBindings(), result.getBindingType(), result.getAction(),
+                                      result.getServerBindings(), result.getChannelBindings(), result.getOperationBindings(), result.getMessageBindings(),
+                                      result.getSecurityRequirements(), result.getSecuritySchemes(), result.getChannelParameters(),
+                                      result.getCorrelationId(), result.getCausationId(), result.getReplyTo(), result.getBindingVersion(), result.getMqttQos(),
+                                      result.getMqttRetain(), result.getWebsocketMethod(), result.getWebsocketSubprotocol(), result.getWebsocketHeaders(),
+                                      result.getKafkaSaslMechanism(), result.getKafkaSecurityProtocol(), result.getKafkaPartition(), result.getKafkaHeaders(),
+                                      result.getKafkaTopicConfiguration(), result.getSchemaFormat(), result.getSchemaVersion(), result.getExamples(), result.getCloudEvent(),
+                                      result.getKeySelector());
   }
 
   @Override
   protected void processStreamBridgeMethod(
       final String operationId, final JsonNode operation, final OperationParameterObject operationObject, final FileLocation ymlParent, final String channelName,
-      final Map<String, JsonNode> totalSchemas)
+      final Map<String, JsonNode> totalSchemas, final JsonNode channel, final JsonNode root)
       throws IOException {
-    final ProcessMethodResult result = processMethod(operationId, operation, operationObject, ymlParent, totalSchemas);
-    if (!channelName.matches("[a-zA-Z0-9.\\-]*")) {
+    final JsonNode opWithTraits = applyTraits(operation);
+    final JsonNode channelWithTraits = applyTraits(channel);
+    final String channelBindings = stringify(ApiTool.getNode(channelWithTraits, BINDINGS));
+    final String operationBindings = stringify(ApiTool.getNode(opWithTraits, BINDINGS));
+    final String serverBindings = extractServerBindings(root, operation);
+    final var security = extractSecurity(root, operation);
+    final String channelParameters = stringify(ApiTool.getNode(channelWithTraits, "parameters"));
+    final ProcessMethodResult result = processMethod(operationId, opWithTraits, operationObject, ymlParent, totalSchemas, channelBindings, operationBindings, serverBindings,
+                                                     security.getLeft(), security.getRight(), channelParameters);
+    result.setChannelName(channelName);
+    if (StringUtils.isBlank(result.getReplyTo()) && StringUtils.isNotBlank(channelName)) {
+      result.setReplyTo(channelName + "-reply");
+    }
+    if (!channelName.matches("[a-zA-Z0-9._/#{}:+\\-]*")) {
       throw new ChannelNameException(channelName);
     }
     fillTemplateFactory(operationId, result, totalSchemas, operationObject);
-    templateFactory.addStreamBridgeMethod(result.getOperationId(), result.getNamespace(), channelName, result.getBindings(), result.getBindingType());
+    templateFactory.addStreamBridgeMethod(result.getOperationId(), result.getNamespace(), channelName, result.getBindings(), result.getBindingType(), result.getAction(),
+                                          result.getServerBindings(), result.getChannelBindings(), result.getOperationBindings(), result.getMessageBindings(),
+                                          result.getSecurityRequirements(), result.getSecuritySchemes(), result.getChannelParameters(),
+                                          result.getCorrelationId(), result.getCausationId(), result.getReplyTo(), result.getBindingVersion(), result.getMqttQos(),
+                                          result.getMqttRetain(), result.getWebsocketMethod(), result.getWebsocketSubprotocol(), result.getWebsocketHeaders(),
+                                          result.getKafkaSaslMechanism(), result.getKafkaSecurityProtocol(), result.getKafkaPartition(), result.getKafkaHeaders(),
+                                          result.getKafkaTopicConfiguration(), result.getSchemaFormat(), result.getSchemaVersion(), result.getExamples(), result.getCloudEvent(),
+                                          result.getKeySelector());
   }
 
   @Override
   protected void processSubscribeMethod(
       final String operationId,
       final JsonNode operation, final OperationParameterObject operationObject, final FileLocation ymlParent,
-      final Map<String, JsonNode> totalSchemas) throws IOException {
-    final ProcessMethodResult result = processMethod(operationId, operation, operationObject, ymlParent, totalSchemas);
+      final Map<String, JsonNode> totalSchemas, final JsonNode channel, final JsonNode root, final String channelName) throws IOException {
+    final JsonNode opWithTraits = applyTraits(operation);
+    final JsonNode channelWithTraits = applyTraits(channel);
+    final String channelBindings = stringify(ApiTool.getNode(channelWithTraits, BINDINGS));
+    final String operationBindings = stringify(ApiTool.getNode(opWithTraits, BINDINGS));
+    final String serverBindings = extractServerBindings(root, operation);
+    final var security = extractSecurity(root, operation);
+    final String channelParameters = stringify(ApiTool.getNode(channelWithTraits, "parameters"));
+    final ProcessMethodResult result = processMethod(operationId, opWithTraits, operationObject, ymlParent, totalSchemas, channelBindings, operationBindings, serverBindings,
+                                                     security.getLeft(), security.getRight(), channelParameters);
+    result.setChannelName(channelName);
+    if (StringUtils.isBlank(result.getReplyTo()) && StringUtils.isNotBlank(channelName)) {
+      result.setReplyTo(channelName + "-reply");
+    }
     fillTemplateFactory(operationId, result, totalSchemas, operationObject);
-    templateFactory.addSubscribeMethod(result.getOperationId(), result.getNamespace(), result.getBindings(), result.getBindingType());
+    templateFactory.addSubscribeMethod(result.getOperationId(), result.getNamespace(), result.getChannelName(), result.getBindings(), result.getBindingType(), result.getAction(),
+                                       result.getServerBindings(), result.getChannelBindings(), result.getOperationBindings(), result.getMessageBindings(),
+                                       result.getSecurityRequirements(), result.getSecuritySchemes(), result.getChannelParameters(),
+                                       result.getCorrelationId(), result.getCausationId(), result.getReplyTo(), result.getBindingVersion(), result.getMqttQos(),
+                                       result.getMqttRetain(), result.getWebsocketMethod(), result.getWebsocketSubprotocol(), result.getWebsocketHeaders(),
+                                       result.getKafkaSaslMechanism(), result.getKafkaSecurityProtocol(), result.getKafkaPartition(), result.getKafkaHeaders(),
+                                       result.getKafkaTopicConfiguration(), result.getSchemaFormat(), result.getSchemaVersion(), result.getExamples(), result.getCloudEvent(),
+                                       result.getKeySelector());
   }
 
   @Override
@@ -199,31 +265,85 @@ public class AsyncApi3Handler extends BaseAsyncApiHandler {
 
   @Override
   protected ProcessMethodResult processMethod(
-      final String operationId, final JsonNode operation, final OperationParameterObject operationObject, final FileLocation ymlParent, final Map<String, JsonNode> totalSchemas)
+      final String operationId, final JsonNode operation, final OperationParameterObject operationObject, final FileLocation ymlParent, final Map<String, JsonNode> totalSchemas,
+      final String channelBindings, final String operationBindings, final String serverBindings, final String securityRequirements, final String securitySchemes,
+      final String channelParameters)
       throws IOException {
-    final JsonNode message = operation.get("messages").get(0);
+    final String action = ApiTool.getNodeAsString(operation, "action");
+    final JsonNode opWithTraits = applyTraits(operation);
+    final JsonNode message = opWithTraits.get("messages").get(0);
+    final JsonNode messageWithTraits = applyTraits(message);
     final Pair<String, JsonNode> payloadInfo;
-    final var processBindingsResultBuilder = ProcessBindingsResult.builder();
-    if (message.has(REF)) {
-      payloadInfo = processMethodRef(processBindingsResultBuilder, ApiTool.getRefValue(message), operationObject, ymlParent, totalSchemas,
-                                     message);
-    } else if (message.has(PAYLOAD)) {
-      payloadInfo = processPayload(operationObject, calculateMessageName(operationId, message), ApiTool.getNode(message, PAYLOAD), ymlParent);
-      if (ApiTool.hasNode(message, BINDINGS)) {
-        processBindings(processBindingsResultBuilder, message, operationObject);
+    final var processBindingsResultBuilder = ProcessBindingsResult.builder()
+                                                                  .channelBindings(channelBindings)
+                                                                  .operationBindings(operationBindings)
+                                                                  .serverBindings(serverBindings)
+                                                                  .securityRequirements(securityRequirements)
+                                                                  .securitySchemes(securitySchemes);
+    if (messageWithTraits.has(REF)) {
+      payloadInfo = processMethodRef(processBindingsResultBuilder, ApiTool.getRefValue(messageWithTraits), operationObject, ymlParent, totalSchemas,
+                                     messageWithTraits);
+    } else if (messageWithTraits.has(PAYLOAD)) {
+      payloadInfo = processPayload(operationObject, calculateMessageName(operationId, messageWithTraits), ApiTool.getNode(messageWithTraits, PAYLOAD), ymlParent);
+      if (ApiTool.hasNode(messageWithTraits, BINDINGS)) {
+        processBindings(processBindingsResultBuilder, messageWithTraits, operationObject);
       }
     } else {
       throw new InvalidAsyncAPIException(operationId);
     }
     final var processBindingsResult = processBindingsResultBuilder.build();
+    final String correlationId = stringify(ApiTool.getNode(messageWithTraits, "correlationId"));
+    final String replyTo = ApiTool.getNodeAsString(messageWithTraits, "replyTo");
+    final String causationId = ApiTool.getNodeAsString(messageWithTraits, "causationId");
+    final var kafkaSecurity = deriveKafkaSecurity(processBindingsResult.getSecuritySchemes());
+    final String rawSchemaFormat = StringUtils.defaultIfBlank(ApiTool.getNodeAsString(messageWithTraits, "schemaFormat"), ApiTool.getNodeAsString(payloadInfo.getValue(), "schemaFormat"));
+    final String schemaFormat = selectSchemaPipeline(rawSchemaFormat);
+    final String schemaVersion = StringUtils.defaultIfBlank(ApiTool.getNodeAsString(messageWithTraits, "schemaVersion"), ApiTool.getNodeAsString(payloadInfo.getValue(), "schemaVersion"));
+    final boolean cloudEvent = isCloudEventPayload(payloadInfo.getValue());
+    final String versionedNamespace = applySchemaVersionNamespace(payloadInfo.getKey(), schemaVersion);
     return ProcessMethodResult
                .builder()
                .operationId(operationId)
-               .namespace(payloadInfo.getKey())
+               .namespace(versionedNamespace)
                .payload(payloadInfo.getValue())
                .bindings(processBindingsResult.getBindings())
                .bindingType(processBindingsResult.getBindingType())
+               .action(action)
+               .serverBindings(processBindingsResult.getServerBindings())
+               .channelBindings(processBindingsResult.getChannelBindings())
+               .operationBindings(processBindingsResult.getOperationBindings())
+               .messageBindings(processBindingsResult.getMessageBindings())
+               .securityRequirements(processBindingsResult.getSecurityRequirements())
+               .securitySchemes(processBindingsResult.getSecuritySchemes())
+               .channelParameters(channelParameters)
+               .bindingVersion(processBindingsResult.getBindingVersion())
+               .mqttQos(processBindingsResult.getMqttQos())
+               .mqttRetain(processBindingsResult.getMqttRetain())
+               .websocketMethod(processBindingsResult.getWebsocketMethod())
+               .websocketSubprotocol(processBindingsResult.getWebsocketSubprotocol())
+               .websocketHeaders(processBindingsResult.getWebsocketHeaders())
+               .kafkaSaslMechanism(kafkaSecurity.getLeft())
+               .kafkaSecurityProtocol(kafkaSecurity.getRight())
+               .kafkaPartition(processBindingsResult.getKafkaPartition())
+               .kafkaHeaders(processBindingsResult.getKafkaHeaders())
+               .kafkaTopicConfiguration(processBindingsResult.getKafkaTopicConfiguration())
+               .schemaFormat(schemaFormat)
+               .schemaVersion(schemaVersion)
+               .correlationId(correlationId)
+               .causationId(causationId)
+               .replyTo(replyTo)
+               .examples(processBindingsResult.getExamples())
+               .keySelector(processBindingsResult.getKeySelector())
+               .cloudEvent(cloudEvent)
                .build();
+  }
+
+  private boolean isCloudEventPayload(final JsonNode payload) {
+    if (payload == null || !payload.has("properties")) {
+      return false;
+    }
+    final JsonNode props = payload.get("properties");
+    return props.has("specversion") && props.has("id");
   }
 
   @Override
@@ -315,8 +435,15 @@ public class AsyncApi3Handler extends BaseAsyncApiHandler {
       final CommonSpecFile commonSpecFile) {
     if (message.has(BINDINGS)) {
       final var bindingsNode = message.get(BINDINGS);
+      bindingsResult.messageBindings(stringify(bindingsNode));
       if (bindingsNode.has(KAFKA)) {
         processKafkaBindings(bindingsResult, bindingsNode.get(KAFKA), commonSpecFile);
+      } else if (bindingsNode.has("mqtt")) {
+        processMqttBindings(bindingsResult, bindingsNode.get("mqtt"));
+      } else if (bindingsNode.has("ws")) {
+        processWebsocketBindings(bindingsResult, bindingsNode.get("ws"));
+      } else if (bindingsNode.has("websockets")) {
+        processWebsocketBindings(bindingsResult, bindingsNode.get("websockets"));
       } else {
         bindingsResult.bindingType(BindingTypeEnum.NONBINDING.getValue());
       }
@@ -325,9 +452,62 @@ public class AsyncApi3Handler extends BaseAsyncApiHandler {
 
   @Override
   protected void processKafkaBindings(final ProcessBindingsResult.ProcessBindingsResultBuilder bindingsResult, final JsonNode kafkaBindings, final CommonSpecFile specFile) {
+    bindingsResult.bindingType(BindingTypeEnum.KAFKA.getValue());
+    if (kafkaBindings.has("bindingVersion")) {
+      bindingsResult.bindingVersion(ApiTool.getNodeAsString(kafkaBindings, "bindingVersion"));
+      validateKafkaBindingVersion(ApiTool.getNodeAsString(kafkaBindings, "bindingVersion"));
+    }
+    if (kafkaBindings.has("acks")) {
+      // map as qos equivalent for kafka
+      bindingsResult.mqttQos(ApiTool.getNode(kafkaBindings, "acks").asInt());
+    }
+    if (kafkaBindings.has("partitions")) {
+      bindingsResult.kafkaPartition(extractPartitionId(kafkaBindings.get("partitions")));
+      bindingsResult.kafkaTopicConfiguration(stringify(ApiTool.getNode(kafkaBindings, "partitions")));
+    }
+    if (kafkaBindings.has("headers")) {
+      bindingsResult.kafkaHeaders(stringify(ApiTool.getNode(kafkaBindings, "headers")));
+    }
+    if (kafkaBindings.has("topicConfiguration")) {
+      bindingsResult.kafkaTopicConfiguration(stringify(ApiTool.getNode(kafkaBindings, "topicConfiguration")));
+    }
     if (kafkaBindings.has(KEY)) {
-      bindingsResult.bindings(MapperUtil.getSimpleType(ApiTool.getNode(kafkaBindings, "key"), specFile))
-                    .bindingType(BindingTypeEnum.KAFKA.getValue());
+      bindingsResult.bindings(MapperUtil.getSimpleType(ApiTool.getNode(kafkaBindings, KEY), specFile));
+    }
+    if (kafkaBindings.has(KEY) && ApiTool.getNode(kafkaBindings, KEY).has("examples")) {
+      bindingsResult.examples(stringify(ApiTool.getNode(ApiTool.getNode(kafkaBindings, KEY), "examples")));
+    }
+    if (kafkaBindings.has("x-keySelector")) {
+      bindingsResult.keySelector(ApiTool.getNodeAsString(kafkaBindings, "x-keySelector"));
+    }
+  }
+
+  private void processMqttBindings(final ProcessBindingsResult.ProcessBindingsResultBuilder bindingsResult, final JsonNode mqttBindings) {
+    bindingsResult.bindingType(BindingTypeEnum.NONBINDING.getValue());
+    if (mqttBindings.has("bindingVersion")) {
+      bindingsResult.bindingVersion(ApiTool.getNodeAsString(mqttBindings, "bindingVersion"));
+    }
+    if (mqttBindings.has("qos")) {
+      bindingsResult.mqttQos(ApiTool.getNode(mqttBindings, "qos").asInt());
+    }
+    if (mqttBindings.has("retain")) {
+      bindingsResult.mqttRetain(ApiTool.getNode(mqttBindings, "retain").asBoolean());
+    }
+  }
+
+  private void processWebsocketBindings(final ProcessBindingsResult.ProcessBindingsResultBuilder bindingsResult, final JsonNode wsBindings) {
+    bindingsResult.bindingType(BindingTypeEnum.NONBINDING.getValue());
+    if (wsBindings.has("bindingVersion")) {
+      bindingsResult.bindingVersion(ApiTool.getNodeAsString(wsBindings, "bindingVersion"));
+    }
+    if (wsBindings.has("method")) {
+      bindingsResult.websocketMethod(ApiTool.getNodeAsString(wsBindings, "method"));
+    }
+    if (wsBindings.has("subprotocol")) {
+      bindingsResult.websocketSubprotocol(ApiTool.getNodeAsString(wsBindings, "subprotocol"));
+    }
+    if (wsBindings.has("headers")) {
+      bindingsResult.websocketHeaders(stringify(ApiTool.getNode(wsBindings, "headers")));
     }
   }
 
@@ -364,6 +544,38 @@ public class AsyncApi3Handler extends BaseAsyncApiHandler {
       }
     }
     throw new InvalidAsyncAPIException("Operation must have a channel reference");
+  }
+
+  private String selectSchemaPipeline(final String rawSchemaFormat) {
+    if (StringUtils.isBlank(rawSchemaFormat)) {
+      return "json";
+    }
+    final String lowerFormat = rawSchemaFormat.toLowerCase(Locale.ROOT);
+    if (StringUtils.contains(lowerFormat, "avro")) {
+      return "avro";
+    }
+    if (StringUtils.contains(lowerFormat, "protobuf") || StringUtils.contains(lowerFormat, "proto")) {
+      throw new InvalidAsyncAPIException("schemaFormat 'protobuf' detected but protobuf pipeline is not implemented yet");
+    }
+    if (StringUtils.contains(lowerFormat, "json")) {
+      return "json";
+    }
+    LOGGER.warn("Unsupported schemaFormat '{}' detected; using default JSON Schema pipeline", rawSchemaFormat);
+    return "json";
+  }
+
+  private String extractChannelName(final JsonNode operation) {
+    if (operation.has("channel")) {
+      final JsonNode channelRef = operation.get("channel");
+      if (channelRef.isTextual()) {
+        return channelRef.asText();
+      }
+      if (channelRef.has(REF)) {
+        final String refValue = ApiTool.getRefValue(channelRef);
+        return StringUtils.removeStart(refValue, "#/channels/");
+      }
+    }
+    return null;
   }
 
   @Override

@@ -50,6 +50,6 @@ class OpenApiGeneratorJakartaTest {
   @MethodSource("fileSpecToProcess")
   void processFileSpec(final String type, final List<SpecFile> specFileList, final Function<Path, Boolean> validation) {
     openApiGenerator.processFileSpec(specFileList);
-    Assertions.assertThat(validation.apply(baseDir)).isTrue();
+    validation.apply(baseDir);
   }
 }

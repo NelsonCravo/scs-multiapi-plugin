@@ -11,6 +11,9 @@ import org.gradle.api.Project;
 import org.gradle.testfixtures.ProjectBuilder;
 import org.junit.jupiter.api.Test;
 
+import com.sngular.api.generator.plugin.OpenApiTask;
+import com.sngular.api.generator.plugin.AsyncApiTask;
+
 class ScsMultiApiTest {
 
   @Test

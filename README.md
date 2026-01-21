@@ -21,9 +21,11 @@ Maven and Gradle
   - [Class Generation](#class-generation)
     - [Consumer and Supplier classes](#consumer-and-supplier-classes)
       - [Method interfaces](#method-interfaces)
-      - [Mapper](#mapper)
-        - [Implementation](#implementation)
-      - [Stream Bridge class](#stream-bridge-class)
+  - [Mapper](#mapper)
+    - [Implementation](#implementation)
+  - [Kafka request/reply](#kafka-requestreply-support)
+  - [Schema Registry](#schema-registry-json-schema)
+  - [Stream Bridge class](#stream-bridge-class)
 - [OpenApi Generator](#openapi-generator)
   - [Getting Started](#getting-started)
   - [Initial Considerations](#initial-considerations)
@@ -531,6 +533,61 @@ public class SubscribeOperation implements ISubscribeOperation {
   }
 }
 ```
+
+#### Kafka request/reply support
+
+Generated Kafka suppliers and consumers propagate `correlationId` and `replyTo` through the `MessageWrapper`. When these values are present in the AsyncAPI contract (or set manually before sending), suppliers add `KafkaHeaders.CORRELATION_ID` and `KafkaHeaders.REPLY_TOPIC` to the outgoing message; consumers expose those headers back to your implementation so you can publish a correlated reply.
+
+Full request/reply wiring is generated: reply topic selection (per operation or default), `ReplyingKafkaTemplate` with configurable timeouts, and a fallback reply listener container (manual correlation) when the template is not used. Reply topics can be derived from the contract (`replyTo`/`x-reply-topic`) or by convention (`<channel>-reply`) and overridden via properties.
+
+```java
+@Bean
+ReplyingKafkaTemplate<String, RequestPayload, ResponsePayload> replyingKafkaTemplate(
+    ProducerFactory<String, RequestPayload> pf,
+    KafkaMessageListenerContainer<String, ResponsePayload> repliesContainer) {
+  var template = new ReplyingKafkaTemplate<>(pf, repliesContainer);
+  template.setDefaultReplyTimeout(Duration.ofSeconds(5));
+  return template;
+}
+```
+
+Pick a reply topic from the contract (for example `replyTo` or a custom `x-reply-topic`), or follow a convention such as `<channelName>-reply`. Set that value in the `MessageWrapper`; the generated consumer will pass it back so you can send the response with the same `correlationId`.
+
+Properties exposed by the generator (per operation):
+- `multiapi.reply.<operation>.topic` — overrides reply topic
+- `multiapi.reply.<operation>.timeout-ms` — timeout for `ReplyingKafkaTemplate`
+
+Additional AsyncAPI-to-runtime mappings:
+- Kafka partitions/topicConfiguration/headers from bindings are propagated (partition header set on publish; config echoed in generated comments).
+- Channel parameters `{param}` are resolved via `multiapi.channel.<param>` (or environment variables) before sending.
+- CloudEvents headers are propagated when payloads match the CloudEvents shape.
+- Security schemes applied: SASL/PLAIN/SSL/API Key headers derived from contract/securitySchemes are wired into generated templates (JAAS, truststore/keystore, custom header).
+- Schema Registry (Confluent): serializers/deserializers are auto-selected per `schemaFormat` (JSON Schema/Avro/Protobuf) when `multiapi.schema.registry.url` is set.
+
+#### Schema Registry (JSON Schema)
+
+When `multiapi.schema.registry.url` is provided, generated Kafka configs set sensible defaults for Confluent JSON Schema Registry (URL, JSON Schema serializer/deserializer, `auto.register.schemas`) without overriding your existing properties. Optional basic auth can be supplied via `multiapi.schema.registry.basic-auth` (`user:pass`).
+
+The generator also provides a `SchemaRegistryClient` bean and a small helper to register/fetch JSON Schema subjects. Add the Confluent dependencies to your application:
+
+```xml
+<dependency>
+  <groupId>io.confluent</groupId>
+  <artifactId>kafka-schema-registry-client</artifactId>
+  <version>${confluent.version}</version>
+</dependency>
+<dependency>
+  <groupId>io.confluent</groupId>
+  <artifactId>kafka-json-schema-serializer</artifactId>
+  <version>${confluent.version}</version>
+</dependency>
+```
+
+Properties:
+- `multiapi.schema.registry.url` — registry URL (required to enable)
+- `multiapi.schema.registry.auto-register` — default `true`
+- `multiapi.schema.registry.basic-auth` — `user:pass` for basic auth (optional)
+- `multiapi.schema.registry.max-cached-schemas` — default `1000`
 
 #### Stream Bridge class
 

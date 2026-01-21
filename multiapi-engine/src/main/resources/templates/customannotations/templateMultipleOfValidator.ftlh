@@ -1,7 +1,7 @@
 package ${packageModel}.customvalidator;
 
 <#list schema.fieldObjectList as field>
-  <#if field.dataType.baseType?has_content && field.dataType.baseType == "BigDecimal">
+  <#if field.dataType.baseType?has_content && (field.dataType.baseType?lower_case == "bigdecimal" || field.dataType.baseType == "BigDecimal" || field.dataType.baseType == "bigDecimal")>
 import java.math.BigDecimal;
   </#if>
 </#list>

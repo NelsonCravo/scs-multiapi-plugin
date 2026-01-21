@@ -12,6 +12,7 @@ import com.sngular.api.generator.plugin.common.model.TypeConstants;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.text.CaseUtils;
 
 public class MapperUtil {
 
@@ -72,9 +73,19 @@ public class MapperUtil {
   }
 
   public static String getPojoName(final String namePojo, final CommonSpecFile specFile) {
+    final String baseName = MapperUtil.toPascalCase(namePojo);
     return (StringUtils.isNotBlank(specFile.getModelNamePrefix()) ? specFile.getModelNamePrefix() : "")
-           + StringUtils.capitalize(namePojo)
+           + baseName
            + (StringUtils.isNotBlank(specFile.getModelNameSuffix()) ? specFile.getModelNameSuffix() : "");
+  }
+
+  private static String toPascalCase(final String rawName) {
+    if (StringUtils.isBlank(rawName)) {
+      return rawName;
+    }
+    final var cleaned = StringUtils.replacePattern(rawName, "[^A-Za-z0-9]", " ");
+    final var camel = CaseUtils.toCamelCase(cleaned, true, ' ');
+    return StringUtils.capitalize(camel);
   }
 
   public static String getRefSchemaName(final JsonNode parameter, String defaultSchemaName) {

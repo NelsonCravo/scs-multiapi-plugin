@@ -18,7 +18,8 @@ public abstract class CommonTemplateLoader implements TemplateLoader {
   protected static final List<String> TEMPLATE_MODEL_FILES = List.of(CommonTemplateIndexConstants.TEMPLATE_CONTENT_SCHEMA,
                                                                      CommonTemplateIndexConstants.TEMPLATE_CONTENT_ENUM,
                                                                      CommonTemplateIndexConstants.TEMPLATE_CONTENT_SCHEMA_LOMBOK,
-                                                                     CommonTemplateIndexConstants.TEMPLATE_MODEL_EXCEPTION);
+                                                                     CommonTemplateIndexConstants.TEMPLATE_MODEL_EXCEPTION,
+                                                                     CommonTemplateIndexConstants.TEMPLATE_COMBINATOR_INTERFACE);
 
   protected static final List<String> TEMPLATE_ANNOTATION_FILES = List.of(CommonTemplateIndexConstants.TEMPLATE_NOT_NULL_ANNOTATION,
                                                                           CommonTemplateIndexConstants.TEMPLATE_NOT_NULL_VALIDATOR_ANNOTATION,

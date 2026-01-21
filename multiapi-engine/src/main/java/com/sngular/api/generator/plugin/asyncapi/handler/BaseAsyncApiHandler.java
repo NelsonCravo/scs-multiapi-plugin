@@ -8,12 +8,15 @@ import java.net.URISyntaxException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.regex.Pattern;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.sngular.api.generator.plugin.asyncapi.exception.DuplicateClassException;
 import com.sngular.api.generator.plugin.asyncapi.model.ProcessBindingsResult;
 import com.sngular.api.generator.plugin.asyncapi.model.ProcessMethodResult;
@@ -80,6 +83,8 @@ public abstract class BaseAsyncApiHandler {
 
   protected static final String KEY = "key";
 
+  private static final ObjectMapper MAPPER = new ObjectMapper();
+
   protected final List<String> processedOperationIds = new ArrayList<>();
 
   protected final List<String> processedClassnames = new ArrayList<>();
@@ -93,6 +98,8 @@ public abstract class BaseAsyncApiHandler {
   protected final String groupId;
 
   protected final Integer springBootVersion;
+
+  protected JsonNode currentRoot;
 
   protected BaseAsyncApiHandler(
       final Integer springBootVersion,
@@ -156,20 +163,21 @@ public abstract class BaseAsyncApiHandler {
 
   protected abstract void processOperation(
       final SpecFile fileParameter, final FileLocation ymlParent, final Map.Entry<String, JsonNode> entry, final JsonNode channel,
-      final String operationId, final JsonNode channelPayload, final Map<String, JsonNode> totalSchemas) throws IOException, TemplateException;
+      final String operationId, final JsonNode channelPayload, final Map<String, JsonNode> totalSchemas, final JsonNode root) throws IOException, TemplateException;
 
   protected abstract void processSupplierMethod(
       final String operationId, final JsonNode channel, final OperationParameterObject operationObject, final FileLocation ymlParent,
-      final Map<String, JsonNode> totalSchemas) throws IOException, TemplateException;
+      final Map<String, JsonNode> totalSchemas, final JsonNode channelNode, final JsonNode root, final String channelName)
+      throws IOException, TemplateException;
 
   protected abstract void processStreamBridgeMethod(
       final String operationId, final JsonNode channel, final OperationParameterObject operationObject, final FileLocation ymlParent, final String channelName,
-      final Map<String, JsonNode> totalSchemas)
+      final Map<String, JsonNode> totalSchemas, final JsonNode channelNode, final JsonNode root)
       throws IOException, TemplateException;
 
   protected abstract void processSubscribeMethod(
       final String operationId, final JsonNode channel, final OperationParameterObject operationObject, final FileLocation ymlParent,
-      final Map<String, JsonNode> totalSchemas) throws IOException, TemplateException;
+      final Map<String, JsonNode> totalSchemas, final JsonNode channelNode, final JsonNode root, final String channelName) throws IOException, TemplateException;
 
   protected abstract void fillTemplateFactory(
       final String operationId,
@@ -178,8 +186,18 @@ public abstract class BaseAsyncApiHandler {
 
   protected abstract ProcessMethodResult processMethod(
       final String operationId,
-      final JsonNode channel, final OperationParameterObject operationObject, final FileLocation ymlParent, final Map<String, JsonNode> totalSchemas)
+      final JsonNode channel, final OperationParameterObject operationObject, final FileLocation ymlParent, final Map<String, JsonNode> totalSchemas,
+      final String channelBindings, final String operationBindings, final String serverBindings, final String securityRequirements, final String securitySchemes,
+      final String channelParameters)
       throws IOException;
+
+  protected String applySchemaVersionNamespace(final String namespace, final String schemaVersion) {
+    if (StringUtils.isBlank(schemaVersion) || StringUtils.isBlank(namespace)) {
+      return namespace;
+    }
+    final String sanitized = schemaVersion.replaceAll("[^A-Za-z0-9]", "_");
+    return namespace + "_v" + sanitized;
+  }
 
   protected abstract Pair<String, JsonNode> processPayload(
       final OperationParameterObject operationObject, final String messageName, final JsonNode payload, final FileLocation ymlParent)
@@ -203,6 +221,44 @@ public abstract class BaseAsyncApiHandler {
       final ProcessBindingsResult.ProcessBindingsResultBuilder bindingsResult, final JsonNode kafkaBindings, final CommonSpecFile specFile);
 
   protected abstract String processModelPackage(final String extractedPackage, final String modelPackage);
+
+  protected void validateKafkaBindingVersion(final String bindingVersion) {
+    if (StringUtils.isBlank(bindingVersion)) {
+      return;
+    }
+    final String[] parts = bindingVersion.split("\\.");
+    try {
+      final int major = parts.length > 0 ? Integer.parseInt(parts[0]) : 0;
+      final int minor = parts.length > 1 ? Integer.parseInt(parts[1]) : 0;
+      if (major > 0 || minor > 4) {
+        log.warn("Kafka bindingVersion '{}' is newer than supported (<=0.4.x). Generated code may not cover all fields.", bindingVersion);
+      }
+    } catch (final NumberFormatException e) {
+      log.warn("Kafka bindingVersion '{}' is not parseable; proceeding with defaults.", bindingVersion);
+    }
+  }
+
+  protected Integer extractPartitionId(final JsonNode partitionsNode) {
+    if (Objects.isNull(partitionsNode)) {
+      return null;
+    }
+    if (partitionsNode.isInt()) {
+      return partitionsNode.asInt();
+    }
+    if (partitionsNode.isArray() && partitionsNode.size() > 0) {
+      final JsonNode first = partitionsNode.get(0);
+      if (first.isInt()) {
+        return first.asInt();
+      }
+      if (first.has("partition") && first.get("partition").isInt()) {
+        return first.get("partition").asInt();
+      }
+    }
+    if (partitionsNode.has("partition") && partitionsNode.get("partition").isInt()) {
+      return partitionsNode.get("partition").asInt();
+    }
+    return null;
+  }
 
   protected void setUpTemplate(final SpecFile fileParameter, final Integer springBootVersion) {
     processPackage(fileParameter);
@@ -242,6 +298,164 @@ public abstract class BaseAsyncApiHandler {
 
   protected void processJavaEEPackage(final Integer springBootVersion) {
     templateFactory.calculateJavaEEPackage(springBootVersion);
+  }
+
+  protected String stringify(final JsonNode node) {
+    return Objects.nonNull(node) ? node.toString() : null;
+  }
+
+  protected String extractServerBindings(final JsonNode root, final JsonNode operation) {
+    if (Objects.isNull(root) || !ApiTool.hasNode(root, "servers")) {
+      return null;
+    }
+    final JsonNode serversNode = ApiTool.getNode(root, "servers");
+    final ObjectNode collected = MAPPER.createObjectNode();
+
+    if (ApiTool.hasNode(operation, "servers")) {
+      final Iterator<JsonNode> serverNames = ApiTool.getNode(operation, "servers").elements();
+      while (serverNames.hasNext()) {
+        final String serverName = serverNames.next().asText();
+        if (serversNode.has(serverName) && ApiTool.hasNode(serversNode.get(serverName), BINDINGS)) {
+          collected.set(serverName, ApiTool.getNode(serversNode.get(serverName), BINDINGS));
+        }
+      }
+    }
+
+    if (!collected.fieldNames().hasNext()) {
+      final Iterator<Map.Entry<String, JsonNode>> serverEntries = serversNode.fields();
+      while (serverEntries.hasNext()) {
+        final Map.Entry<String, JsonNode> serverEntry = serverEntries.next();
+        if (ApiTool.hasNode(serverEntry.getValue(), BINDINGS)) {
+          collected.set(serverEntry.getKey(), ApiTool.getNode(serverEntry.getValue(), BINDINGS));
+        }
+      }
+    }
+
+    return collected.fieldNames().hasNext() ? collected.toString() : null;
+  }
+
+  protected Pair<String, String> extractSecurity(final JsonNode root, final JsonNode operation) {
+    final var requirementsArray = MAPPER.createArrayNode();
+    if (ApiTool.hasNode(operation, "security")) {
+      ApiTool.getNode(operation, "security").forEach(requirementsArray::add);
+    } else if (ApiTool.hasNode(root, "security")) {
+      ApiTool.getNode(root, "security").forEach(requirementsArray::add);
+    }
+
+    if (ApiTool.hasNode(operation, "servers") && ApiTool.hasNode(root, "servers")) {
+      final JsonNode serversNode = ApiTool.getNode(root, "servers");
+      final Iterator<JsonNode> serverNames = ApiTool.getNode(operation, "servers").elements();
+      while (serverNames.hasNext()) {
+        final String serverName = serverNames.next().asText();
+        if (serversNode.has(serverName) && ApiTool.hasNode(serversNode.get(serverName), "security")) {
+          ApiTool.getNode(serversNode.get(serverName), "security").forEach(requirementsArray::add);
+        }
+      }
+    } else if (ApiTool.hasNode(root, "servers")) {
+      final Iterator<Map.Entry<String, JsonNode>> serverEntries = ApiTool.getNode(root, "servers").fields();
+      while (serverEntries.hasNext()) {
+        final Map.Entry<String, JsonNode> serverEntry = serverEntries.next();
+        if (ApiTool.hasNode(serverEntry.getValue(), "security")) {
+          ApiTool.getNode(serverEntry.getValue(), "security").forEach(requirementsArray::add);
+        }
+      }
+    }
+
+    final var usedSchemes = new java.util.HashSet<String>();
+    requirementsArray.forEach(reqObj -> reqObj.fieldNames().forEachRemaining(usedSchemes::add));
+
+    ObjectNode collectedSchemes = null;
+    if (ApiTool.hasNode(root, "components") && ApiTool.hasNode(ApiTool.getNode(root, "components"), "securitySchemes")) {
+      final JsonNode schemes = ApiTool.getNode(ApiTool.getNode(root, "components"), "securitySchemes");
+      final ObjectNode collectedMutable = MAPPER.createObjectNode();
+      usedSchemes.stream()
+                 .filter(schemes::has)
+                 .forEach(name -> collectedMutable.set(name, schemes.get(name)));
+      collectedSchemes = collectedMutable;
+    }
+
+    final String requirements = requirementsArray.size() > 0 ? requirementsArray.toString() : null;
+    final String schemesStr = collectedSchemes != null && collectedSchemes.fieldNames().hasNext() ? collectedSchemes.toString() : null;
+    return Pair.of(requirements, schemesStr);
+  }
+
+  protected Pair<String, String> deriveKafkaSecurity(final String securitySchemesJson) {
+    if (StringUtils.isBlank(securitySchemesJson)) {
+      return Pair.of(null, null);
+    }
+    try {
+      final JsonNode schemes = MAPPER.readTree(securitySchemesJson);
+      final var fieldNames = schemes.fieldNames();
+      while (fieldNames.hasNext()) {
+        final String name = fieldNames.next();
+        final JsonNode scheme = schemes.get(name);
+        final String type = ApiTool.getNodeAsString(scheme, "type");
+        if (StringUtils.equalsAnyIgnoreCase(type, "plain", "userPassword")) {
+          return Pair.of("PLAIN", "SASL_PLAINTEXT");
+        } else if (StringUtils.equalsIgnoreCase(type, "scramSha256")) {
+          return Pair.of("SCRAM-SHA-256", "SASL_PLAINTEXT");
+        } else if (StringUtils.equalsIgnoreCase(type, "scramSha512")) {
+          return Pair.of("SCRAM-SHA-512", "SASL_PLAINTEXT");
+        } else if (StringUtils.equalsIgnoreCase(type, "xoauth2") || StringUtils.equalsIgnoreCase(type, "oauth2")) {
+          return Pair.of("OAUTHBEARER", "SASL_PLAINTEXT");
+        }
+      }
+    } catch (IOException e) {
+      log.warn("Could not parse securitySchemes to derive Kafka security", e);
+    }
+    return Pair.of(null, null);
+  }
+
+  protected JsonNode applyTraits(final JsonNode node) {
+    return applyTraits(node, currentRoot);
+  }
+
+  protected JsonNode applyTraits(final JsonNode node, final JsonNode root) {
+    if (node == null || !node.has("traits") || !node.get("traits").isArray()) {
+      return node;
+    }
+    final ObjectNode merged = MAPPER.createObjectNode();
+    merged.setAll((ObjectNode) node);
+    for (JsonNode traitNode : node.get("traits")) {
+      JsonNode traitContent = traitNode;
+      if (traitNode.isObject() && traitNode.has(REF) && Objects.nonNull(root)) {
+        traitContent = resolveRefNode(root, ApiTool.getRefValue(traitNode));
+      }
+      if (traitContent != null && traitContent.isObject()) {
+        mergeIfAbsent(merged, (ObjectNode) applyTraits(traitContent, root));
+      }
+    }
+    merged.remove("traits");
+    return merged;
+  }
+
+  private JsonNode resolveRefNode(final JsonNode root, final String refValue) {
+    if (StringUtils.isBlank(refValue) || Objects.isNull(root)) {
+      return null;
+    }
+    if (refValue.startsWith("#/")) {
+      final String[] segments = refValue.substring(2).split("/");
+      JsonNode cursor = root;
+      for (final String segment : segments) {
+        if (cursor == null) {
+          return null;
+        }
+        cursor = cursor.get(segment);
+      }
+      return cursor;
+    }
+    log.warn("Trait $ref '{}' points to external document; external trait resolution is not yet supported.", refValue);
+    return null;
+  }
+
+  private void mergeIfAbsent(final ObjectNode target, final ObjectNode source) {
+    source.fieldNames().forEachRemaining(field -> {
+      if (!target.has(field)) {
+        target.set(field, source.get(field));
+      } else if (target.get(field).isObject() && source.get(field).isObject()) {
+        mergeIfAbsent((ObjectNode) target.get(field), (ObjectNode) source.get(field));
+      }
+    });
   }
 
   protected String evaluatePackage(final OperationParameterObject operation) {

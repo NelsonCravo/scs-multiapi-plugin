@@ -245,7 +245,6 @@ public class AsyncApi3Handler extends BaseAsyncApiHandler {
     final String keyClassFullName = processedMethod.getBindings();
     final String modelPackage = classFullName.substring(0, classFullName.lastIndexOf("."));
     final String parentPackage = modelPackage.substring(modelPackage.lastIndexOf(".") + 1);
-    final String className = classFullName.substring(classFullName.lastIndexOf(".") + 1);
     String className = classFullName.substring(classFullName.lastIndexOf(".") + 1);
     String suffix = operationObject.getModelNameSuffix();
     if (StringUtils.isNotBlank(className)) {
@@ -382,7 +381,7 @@ public class AsyncApi3Handler extends BaseAsyncApiHandler {
     }
     String refClassName = MapperUtil.getRefClass(method);
     String suffix = operationObject.getModelNameSuffix();
-    if (StringUtils.isNotBlank(suffix) && !messageName.endsWith(suffix)) {
+    if (StringUtils.isNotBlank(suffix) && !refClassName.endsWith(suffix)) {
       refClassName = refClassName + suffix;
     }
     return processPayload(operationObject, refClassName, solvePayload(message, totalSchemas, ymlParent), ymlParent);
@@ -394,8 +393,8 @@ public class AsyncApi3Handler extends BaseAsyncApiHandler {
     final String messageContent = ApiTool.getRefValue(messageBody);
     if (messageContent.startsWith("#")) {
       namespace = processModelPackage(MapperUtil.getLongRefClass(messageBody), modelPackage);
-    } else if (messageContent.contains("#") || StringUtils.endsWith(messageContent, "yml")
-               || StringUtils.endsWith(messageContent, "yaml") || StringUtils.endsWith(messageContent, "json")) {
+    } else if (messageContent.contains("#") || StringUtils.endsWithIgnoreCase(messageContent, "yml")
+               || StringUtils.endsWithIgnoreCase(messageContent, "yaml") || StringUtils.endsWithIgnoreCase(messageContent, "json")) {
       namespace = processExternalRef(modelPackage, ymlParent, messageBody);
     } else {
       namespace = processExternalAvro(ymlParent, messageContent);

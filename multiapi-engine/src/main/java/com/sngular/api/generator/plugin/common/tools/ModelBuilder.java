@@ -9,6 +9,7 @@ package com.sngular.api.generator.plugin.common.tools;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.security.MessageDigest;
 import java.util.ArrayList;
@@ -305,10 +306,10 @@ public final class ModelBuilder {
       // if fields are required but have no captured restrictions, mark them for NotNull
       for (final var f : fieldObjectArrayList) {
         try {
-          if (!f.isRequired() && f.getRestrictions() != null && f.getRestrictions().getProperties().isEmpty()) {
+          if (f.isRequired() && f.getRestrictions() != null && f.getRestrictions().getProperties().isEmpty()) {
             f.getRestrictions().getProperties().add("NotNull");
           }
-        } catch (final Exception e) {
+        } catch (final Exception ignore) {
           // do not fail on instrumentation
         }
       }    
@@ -413,7 +414,7 @@ public final class ModelBuilder {
       setFieldType(field, fieldBody, schema, specFile, fieldName);
       fieldObjectArrayList.add(field);
     } else {
-      fieldObjectArrayList.addAll(processFieldObjectList(buildingSchema, fieldName, fieldName, fieldBody, specFile, totalSchemas, compositedSchemas, antiLoopList, baseDir));
+      fieldObjectArrayList.addAll(processFieldObjectList(buildingSchema, fieldName, fieldName, fieldBody, specFile, totalSchemas, compositedSchemas, antiLoopList, baseDir, ApiTool.checkIfRequired(schema, fieldName)));
     }
     return fieldObjectArrayList;
   }
@@ -524,9 +525,9 @@ public final class ModelBuilder {
                   fieldObject.getRestrictions().getProperties().add("MultipleOf");
                 }
                 if (child.has("minItems") || child.has("maxItems") || child.has("uniqueItems")) {
-                  fieldObject.getRestrictions().getProperties().add("minItems");
-                  fieldObject.getRestrictions().getProperties().add("maxItems");
-                  fieldObject.getRestrictions().getProperties().add("uniqueItems");
+                  fieldObject.getRestrictions().getProperties().add("MinItems");
+                  fieldObject.getRestrictions().getProperties().add("MaxItems");
+                  fieldObject.getRestrictions().getProperties().add("UniqueItems");
                 }
               }
             }
@@ -923,7 +924,7 @@ public final class ModelBuilder {
           // fallback: try to expect restrictions from the ref node itself
           addPropertiesToFieldObject(field, schema);
         }
-      } catch (Exception e) {
+      } catch (Exception ignore) {
         // best effort
       }
     }

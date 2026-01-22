@@ -83,6 +83,9 @@ public class MapperUtil {
     if (StringUtils.isBlank(rawName)) {
       return rawName;
     }
+    if (StringUtils.isAlphanumeric(rawName)) {
+      return StringUtils.capitalize(rawName);
+    }
     final var cleaned = StringUtils.replacePattern(rawName, "[^A-Za-z0-9]", " ");
     final var camel = CaseUtils.toCamelCase(cleaned, true, ' ');
     return StringUtils.capitalize(camel);

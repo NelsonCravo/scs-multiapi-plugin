@@ -29,23 +29,23 @@ public class ${subscribeClassName?cap_first} {
   <#list subscribeMethods as method>
   private final I${method.operationId?cap_first} ${method.operationId?uncap_first};
   </#list>
-  @Value("\${multiapi.kafka.sasl.jaas-config:}")
+  @Value("<#noparse>${multiapi.kafka.sasl.jaas-config:}</#noparse>")
   private String multiapiKafkaJaasConfig;
-  @Value("\${multiapi.kafka.ssl.truststore-location:}")
+  @Value("<#noparse>${multiapi.kafka.ssl.truststore-location:}</#noparse>")
   private String multiapiKafkaTruststoreLocation;
-  @Value("\${multiapi.kafka.ssl.truststore-password:}")
+  @Value("<#noparse>${multiapi.kafka.ssl.truststore-password:}</#noparse>")
   private String multiapiKafkaTruststorePassword;
-  @Value("\${multiapi.kafka.ssl.keystore-location:}")
+  @Value("<#noparse>${multiapi.kafka.ssl.keystore-location:}</#noparse>")
   private String multiapiKafkaKeystoreLocation;
-  @Value("\${multiapi.kafka.ssl.keystore-password:}")
+  @Value("<#noparse>${multiapi.kafka.ssl.keystore-password:}</#noparse>")
   private String multiapiKafkaKeystorePassword;
-  @Value("\${multiapi.kafka.api-key.header:}")
+  @Value("<#noparse>${multiapi.kafka.api-key.header:}</#noparse>")
   private String multiapiKafkaApiKeyHeader;
-  @Value("\${multiapi.kafka.api-key.value:}")
+  @Value("<#noparse>${multiapi.kafka.api-key.value:}</#noparse>")
   private String multiapiKafkaApiKeyValue;
-  @Value("\${multiapi.schema.registry.url:}")
+  @Value("<#noparse>${multiapi.schema.registry.url:}</#noparse>")
   private String multiapiSchemaRegistryUrl;
-  @Value("\${multiapi.schema.registry.auto-register:true}")
+  @Value("<#noparse>${multiapi.schema.registry.auto-register:true}</#noparse>")
   private String multiapiSchemaAutoRegister;
   private final Environment environment;
   private final ObjectMapper objectMapper;
@@ -275,12 +275,20 @@ public class ${subscribeClassName?cap_first} {
     return deserializer != null ? deserializer : "io.confluent.kafka.serializers.json.KafkaJsonSchemaDeserializer";
   }
 
-  private <K> K resolveKey(final Message<?> message, final Class<K> targetType<#if subscribeMethods?any(m -> m.keySelector?has_content)>, final String selector</#if>) {
+  <#-- Compute flag whether any subscribe method has a keySelector -->
+  <#assign hasKeySelector=false />
+  <#list subscribeMethods as _m>
+    <#if _m.keySelector?has_content>
+      <#assign hasKeySelector=true />
+    </#if>
+  </#list>
+
+  private <K> K resolveKey(final Message<?> message, final Class<K> targetType<#if hasKeySelector>, final String selector</#if>) {
     final K headerKey = message.getHeaders().get(KafkaHeaders.${kafkaKeyHeader}, targetType);
     if (headerKey != null) {
       return headerKey;
     }
-    <#if subscribeMethods?any(m -> m.keySelector?has_content)>
+    <#if hasKeySelector>
     if (selector != null && !selector.isBlank()) {
       try {
         final JsonNode tree = objectMapper.valueToTree(message.getPayload());

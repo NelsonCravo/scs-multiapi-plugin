@@ -101,6 +101,14 @@ public class SchemaUtil {
   }
 
   private static String cleanUpPath(final String filePath) {
-    return StringUtils.startsWith(filePath, "./") ? filePath.substring(2) : filePath;
+    if (filePath == null) {
+      return null;
+    }
+    // Remove leading ./ and normalize backslashes
+    String cleaned = filePath.replace('\\', '/');
+    if (StringUtils.startsWith(cleaned, "./")) {
+      cleaned = cleaned.substring(2);
+    }
+    return cleaned;
   }
 }

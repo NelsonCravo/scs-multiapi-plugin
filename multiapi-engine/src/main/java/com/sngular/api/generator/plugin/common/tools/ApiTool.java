@@ -54,7 +54,7 @@ public final class ApiTool {
   }
 
   public static Iterator<Entry<String, JsonNode>> getProperties(final JsonNode schema) {
-    return getNode(schema, "properties").fields();
+    return getFieldIterator(schema, "properties");
   }
 
   public static JsonNode getNode(final JsonNode schema, final String nodeName) {

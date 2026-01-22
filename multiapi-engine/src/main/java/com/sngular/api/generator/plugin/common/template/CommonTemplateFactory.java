@@ -4,6 +4,8 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.FilenameFilter;
 import java.io.IOException;
+import java.io.StringWriter;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -84,15 +86,47 @@ public abstract class CommonTemplateFactory {
 
   protected void generateTemplates() {
 
-    final String exceptionPackage;
-    if (generateExceptionTemplate) {
-      exceptionPackage = getClassTemplate().getModelPackage();
-    } else {
-      exceptionPackage = null;
+    if (!generateExceptionTemplate) {
+      for (final ClassTemplate ct : classTemplateList) {
+        final SchemaObject s = ct.getClassSchema();
+        if (Objects.nonNull(s)) {
+          if (StringUtils.isNotBlank(s.getSchemaCombinator()) && ("anyOf".equals(s.getSchemaCombinator()) || "oneOf".equals(s.getSchemaCombinator()))) {
+            generateExceptionTemplate = true;
+            break;
+          }
+          if (!ct.isUseLombok() && Objects.nonNull(s.getFieldObjectList())) {
+            for (final var field : s.getFieldObjectList()) {
+              if (field.isRequired()) {
+                generateExceptionTemplate = true;
+                break;
+              }
+            }
+            if (generateExceptionTemplate) {
+              break;
+            }
+          }
+        }
+      }
     }
+
+    final String exceptionPackage = null;
 
     classTemplateList.forEach(classTemplate -> {
       try {
+        try {
+          final Path propsPath = classTemplate.getPropertiesPath();
+          final Path exceptionDir = propsPath.resolve("exception");
+          if (!exceptionDir.toFile().exists()) {
+            Files.createDirectories(exceptionDir);
+          }
+          final Path customValidatorDir = propsPath.resolve("customValidator");
+          if (!customValidatorDir.toFile().exists()) {
+            Files.createDirectories(customValidatorDir);
+          }
+        } catch (final Exception ignore) {
+          // do not fail generation if this fails
+        }
+
         fillTemplates(classTemplate.getPropertiesPath(), classTemplate.getModelPackage(),
                       fillTemplateSchema(classTemplate, exceptionPackage));
         if (generateExceptionTemplate) {
@@ -270,8 +304,12 @@ public abstract class CommonTemplateFactory {
     final Template template = cfg.getTemplate(templateName);
 
     if (!Files.exists(Path.of(path)) || checkOverwrite) {
-      try (FileWriter writer = new FileWriter(path)) {
-        template.process(root, writer);
+      try {
+        final StringWriter sw = new StringWriter();
+        template.process(root, sw);
+        final String processed = sw.toString();
+        
+        Files.write(Path.of(path), processed.getBytes(StandardCharsets.UTF_8));
       } catch (IOException | TemplateException exception) {
         final var schema = root.get("schema");
         throw new GeneratorTemplateException(String.format(" Error processing template %s with object %s", templateName, ((SchemaObject) schema).getClassName()), exception);

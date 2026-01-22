@@ -246,6 +246,14 @@ public class AsyncApi3Handler extends BaseAsyncApiHandler {
     final String modelPackage = classFullName.substring(0, classFullName.lastIndexOf("."));
     final String parentPackage = modelPackage.substring(modelPackage.lastIndexOf(".") + 1);
     final String className = classFullName.substring(classFullName.lastIndexOf(".") + 1);
+    String className = classFullName.substring(classFullName.lastIndexOf(".") + 1);
+    String suffix = operationObject.getModelNameSuffix();
+    if (StringUtils.isNotBlank(className)) {
+      className = className.substring(0, 1).toUpperCase() + (className.length() > 1 ? className.substring(1) : "");
+    }
+    if (StringUtils.isNotBlank(suffix) && !className.endsWith(suffix)) {
+      className = className + suffix;
+    }
     final String keyClassName = keyClassFullName != null ? keyClassFullName.substring(keyClassFullName.lastIndexOf(".") + 1) : null;
     final JsonNode schemaToBuild = processedMethod.getPayload();
     if (shouldBuild(schemaToBuild)) {
@@ -350,10 +358,15 @@ public class AsyncApi3Handler extends BaseAsyncApiHandler {
   protected Pair<String, JsonNode> processPayload(final OperationParameterObject operationObject, final String messageName, final JsonNode payload, final FileLocation ymlParent)
       throws IOException {
     final String namespace;
+    String className = messageName;
+    String suffix = operationObject.getModelNameSuffix();
+    if (StringUtils.isNotBlank(suffix) && !messageName.endsWith(suffix)) {
+      className = messageName + suffix;
+    }
     if (ApiTool.hasRef(payload)) {
       namespace = processMessageRef(payload, operationObject.getModelPackage(), ymlParent);
     } else {
-      namespace = operationObject.getModelPackage() + PACKAGE_SEPARATOR_STR + messageName;
+      namespace = operationObject.getModelPackage() + PACKAGE_SEPARATOR_STR + className;
     }
     return Pair.of(namespace, payload);
   }
@@ -367,7 +380,12 @@ public class AsyncApi3Handler extends BaseAsyncApiHandler {
     if (ApiTool.hasNode(message, BINDINGS)) {
       processBindings(bindingsResult, message, operationObject);
     }
-    return processPayload(operationObject, MapperUtil.getRefClass(method), solvePayload(message, totalSchemas, ymlParent), ymlParent);
+    String refClassName = MapperUtil.getRefClass(method);
+    String suffix = operationObject.getModelNameSuffix();
+    if (StringUtils.isNotBlank(suffix) && !messageName.endsWith(suffix)) {
+      refClassName = refClassName + suffix;
+    }
+    return processPayload(operationObject, refClassName, solvePayload(message, totalSchemas, ymlParent), ymlParent);
   }
 
   @Override
@@ -613,7 +631,7 @@ public class AsyncApi3Handler extends BaseAsyncApiHandler {
     if (ApiTool.hasNode(message, PAYLOAD)) {
       final JsonNode payload = message.get(PAYLOAD);
       if (!payload.has(REF)) {
-        final String key = EVENT.toUpperCase() + SLASH + MapperUtil.getSchemaKey(calculateMessageName(messageName, message));
+        final String key = EVENT + SLASH + MapperUtil.getSchemaKey(calculateMessageName(messageName, message));
         totalSchemas.putIfAbsent(key, payload);
       }
     } else if (ApiTool.hasRef(message)) {

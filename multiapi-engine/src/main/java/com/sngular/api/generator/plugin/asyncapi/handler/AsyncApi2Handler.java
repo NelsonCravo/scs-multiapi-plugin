@@ -357,8 +357,8 @@ public class AsyncApi2Handler extends BaseAsyncApiHandler {
     final String messageContent = ApiTool.getRefValue(messageBody);
     if (messageContent.startsWith("#")) {
       namespace = processModelPackage(MapperUtil.getLongRefClass(messageBody), modelPackage);
-    } else if (messageContent.contains("#") || StringUtils.endsWith(messageContent, "yml")
-               || StringUtils.endsWith(messageContent, "yaml") || StringUtils.endsWith(messageContent, "json")) {
+    } else if (messageContent.contains("#") || StringUtils.endsWithIgnoreCase(messageContent, "yml")
+               || StringUtils.endsWithIgnoreCase(messageContent, "yaml") || StringUtils.endsWithIgnoreCase(messageContent, "json")) {
       namespace = processExternalRef(modelPackage, ymlParent, messageBody);
     } else {
       namespace = processExternalAvro(ymlParent, messageContent);

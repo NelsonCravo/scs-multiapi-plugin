@@ -42,30 +42,28 @@ public class ${supplierClassName?cap_first} {
   <#list publishMethods as method>
   private final I${method.operationId?cap_first} ${method.operationId?uncap_first};
   <#if method.replyTo?has_content>
-  @Value("\${multiapi.reply.${method.operationId?lower_case}.timeout-ms:5000}")
   private long ${method.operationId?uncap_first}ReplyTimeoutMs;
-  @Value("\${multiapi.reply.${method.operationId?lower_case}.topic:}")
   private String ${method.operationId?uncap_first}ReplyTopicOverride;
   </#if>
 
   </#list>
-  @Value("\${multiapi.kafka.sasl.jaas-config:}")
+  @Value("<#noparse>${multiapi.kafka.sasl.jaas-config:}</#noparse>")
   private String multiapiKafkaJaasConfig;
-  @Value("\${multiapi.kafka.ssl.truststore-location:}")
+  @Value("<#noparse>${multiapi.kafka.ssl.truststore-location:}</#noparse>")
   private String multiapiKafkaTruststoreLocation;
-  @Value("\${multiapi.kafka.ssl.truststore-password:}")
+  @Value("<#noparse>${multiapi.kafka.ssl.truststore-password:}</#noparse>")
   private String multiapiKafkaTruststorePassword;
-  @Value("\${multiapi.kafka.ssl.keystore-location:}")
+  @Value("<#noparse>${multiapi.kafka.ssl.keystore-location:}</#noparse>")
   private String multiapiKafkaKeystoreLocation;
-  @Value("\${multiapi.kafka.ssl.keystore-password:}")
+  @Value("<#noparse>${multiapi.kafka.ssl.keystore-password:}</#noparse>")
   private String multiapiKafkaKeystorePassword;
-  @Value("\${multiapi.kafka.api-key.header:}")
+  @Value("<#noparse>${multiapi.kafka.api-key.header:}</#noparse>")
   private String multiapiKafkaApiKeyHeader;
-  @Value("\${multiapi.kafka.api-key.value:}")
+  @Value("<#noparse>${multiapi.kafka.api-key.value:}</#noparse>")
   private String multiapiKafkaApiKeyValue;
-  @Value("\${multiapi.schema.registry.url:}")
+  @Value("<#noparse>${multiapi.schema.registry.url:}</#noparse>")
   private String multiapiSchemaRegistryUrl;
-  @Value("\${multiapi.schema.registry.auto-register:true}")
+  @Value("<#noparse>${multiapi.schema.registry.auto-register:true}")
   private String multiapiSchemaAutoRegister;
   private final Environment environment;
   private final ObjectMapper objectMapper;
@@ -77,6 +75,12 @@ public class ${supplierClassName?cap_first} {
     </#list>
     this.environment = environment;
     this.objectMapper = objectMapper;
+    <#list publishMethods as method>
+      <#if method.replyTo?has_content>
+        this.${method.operationId?uncap_first}ReplyTimeoutMs = Long.parseLong(environment.getProperty("multiapi.reply.this.${method.operationId?lower_case}.timeout-ms", 5000));
+        this.${method.operationId?uncap_first}ReplyTopicOverride = environment.getProperty("multiapi.reply.this.${method.operationId?lower_case}.topic", "");
+      </#if>
+    </#list>
   }
 
   <#if publishMethods?size gt 0>

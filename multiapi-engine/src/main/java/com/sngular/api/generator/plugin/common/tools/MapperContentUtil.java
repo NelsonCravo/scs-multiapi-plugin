@@ -28,8 +28,17 @@ public class MapperContentUtil {
       final String parentPackage, final CommonSpecFile specFile, final Path baseDir) {
     final List<SchemaObject> schemasList = new ArrayList<>();
     if (Objects.nonNull(model)) {
+      // Resolve $ref if present
+      JsonNode resolvedModel = model;
+      if (model.has("$ref")) {
+        String refValue = model.get("$ref").asText();
+        resolvedModel = totalSchemas.getOrDefault(refValue.replace("#/components/schemas/", ""), model);
+        if (resolvedModel == null) {
+          resolvedModel = model;
+        }
+      }
       final var modelToBuildMap = new HashMap<String, SchemaObject>();
-      schemasList.add(ModelBuilder.buildSchemaObject(totalSchemas, className, model, new HashSet<>(), modelToBuildMap, parentPackage, specFile, baseDir));
+      schemasList.add(ModelBuilder.buildSchemaObject(totalSchemas, className, resolvedModel, new HashSet<>(), modelToBuildMap, parentPackage, specFile, baseDir));
       schemasList.addAll(modelToBuildMap.values());
     }
     return schemasList;

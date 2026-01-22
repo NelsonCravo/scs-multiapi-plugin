@@ -7,7 +7,9 @@
 package com.sngular.api.generator.plugin.common.tools;
 
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.Base64;
@@ -62,15 +64,13 @@ public final class ModelBuilder {
 
     final String effectiveClassName = resolveClassName(className, model);
 
-    antiLoopList.add(WordUtils.capitalizeFully(effectiveClassName));
+    // Always use PascalCase for antiLoopList and schemaName
+    String pascalCaseClassName = MapperUtil.getPojoName(effectiveClassName, specFile);
+    antiLoopList.add(pascalCaseClassName);
     final var schemaBuilder = SchemaObject.builder()
-                                          .schemaName(WordUtils.capitalizeFully(effectiveClassName));
+                                          .schemaName(pascalCaseClassName);
     final var calculatedInlinePrefix = MapperUtil.calculatePrefixName("Inline", specFile);
-    if (!StringUtils.startsWith(effectiveClassName, calculatedInlinePrefix)) {
-      schemaBuilder.className(MapperUtil.getPojoName(effectiveClassName, specFile));
-    } else {
-      schemaBuilder.className(effectiveClassName);
-    }
+    schemaBuilder.className(pascalCaseClassName);
 
     if (!ApiTool.isEnum(model)) {
       final var listSchema = getFields(null, totalSchemas, model, specFile, compositedSchemas, antiLoopList, WordUtils.capitalizeFully(effectiveClassName), baseDir);
@@ -191,7 +191,10 @@ public final class ModelBuilder {
       if (ApiTool.hasAdditionalProperties(schema)) {
         ApiTool.getProperties(schema).forEachRemaining(processProperties(buildingSchema, totalSchemas, compositedSchemas, fieldObjectArrayList, specFile, schema, antiLoopList,
                                                                          baseDir));
-        fieldObjectArrayList.addAll(processAdditionalProperties(ADDITIONAL_PROPERTIES, schema, specFile, totalSchemas, compositedSchemas, antiLoopList, nameSchema, baseDir));
+        final var addPropObj = ApiTool.getAdditionalProperties(schema);
+        if (!addPropObj.isBoolean() && !addPropObj.isNull()) {
+          fieldObjectArrayList.addAll(processAdditionalProperties(ADDITIONAL_PROPERTIES, schema, specFile, totalSchemas, compositedSchemas, antiLoopList, nameSchema, baseDir));
+        }
       } else {
         ApiTool.getProperties(schema).forEachRemaining(processProperties(nameSchema, totalSchemas, compositedSchemas, fieldObjectArrayList, specFile, schema, antiLoopList,
                                                                          baseDir));
@@ -199,10 +202,16 @@ public final class ModelBuilder {
     } else if (TypeConstants.ARRAY.equalsIgnoreCase(ApiTool.getType(schema))) {
       final String itemType = ApiTool.hasRef(ApiTool.getItems(schema)) ? resolveRefPojoName(ApiTool.getItems(schema), specFile, totalSchemas)
                                   : ApiTool.getType(ApiTool.getItems(schema));
-      fieldObjectArrayList.add(SchemaFieldObject.builder()
+      final var arrayField = SchemaFieldObject.builder()
                                                 .baseName("items")
                                                 .dataType(SchemaFieldObjectType.fromTypeList(TypeConstants.ARRAY, itemType))
-                                                .build());
+                                                .build();
+      // Propagate item-leval and array-level restrictions when present
+      if (ApiTool.hasItems(schema)) {
+        addPropertiesToFieldObject(arrayField, ApiTool.getItems(schema));
+      }
+      addPropertiesToFieldObject(arrayField, schema);
+      fieldObjectArrayList.add(arrayField);
     } else if (ApiTool.isAllOf(schema)) {
       fieldObjectArrayList.addAll(processAllOf(totalSchemas, ApiTool.getAllOf(schema), specFile, compositedSchemas, antiLoopList, baseDir));
     } else if (ApiTool.isAnyOf(schema)) {
@@ -213,8 +222,14 @@ public final class ModelBuilder {
       fieldObjectArrayList.add(processEnumField(ApiTool.getName(schema), schema, specFile, ApiTool.getEnumValues(schema), schema));
     } else if (ApiTool.hasRef(schema)) {
       final var refSchema = totalSchemas.get(MapperUtil.getRefSchemaKey(schema));
-      ApiTool.getProperties(refSchema).forEachRemaining(processProperties(buildingSchema, totalSchemas, compositedSchemas, fieldObjectArrayList, specFile, refSchema, antiLoopList,
-                                                                          baseDir));
+      if (refSchema != null) {
+        if (ApiTool.isAllOf(refSchema)) {
+          fieldObjectArrayList.addAll(processAllOf(totalSchemas, ApiTool.getAllOf(refSchema), specFile, compositedSchemas, antiLoopList, baseDir));
+        } else if (ApiTool.hasProperties(refSchema)) {
+          ApiTool.getProperties(refSchema).forEachRemaining(processProperties(buildingSchema, totalSchemas, compositedSchemas, fieldObjectArrayList, specFile, refSchema, antiLoopList,
+                                                                    baseDir));
+        }
+      }
     } else {
       fieldObjectArrayList.add(SchemaFieldObject.builder()
                                                 .baseName(ApiTool.getName(schema))
@@ -230,7 +245,7 @@ public final class ModelBuilder {
       final String buildingSchema,
       final String fieldName, final String className, final JsonNode schema, final CommonSpecFile specFile,
       final Map<String, JsonNode> totalSchemas, final Map<String, SchemaObject> compositedSchemas,
-      final Set<String> antiLoopList, final Path baseDir) {
+      final Set<String> antiLoopList, final Path baseDir, final boolean isRequired) {
     final var fieldObjectArrayList = new ArrayList<SchemaFieldObject>();
 
     if (TypeConstants.ARRAY.equalsIgnoreCase(ApiTool.getType(schema))) {
@@ -241,19 +256,25 @@ public final class ModelBuilder {
       fieldObjectArrayList.add(
           processRef(fieldName, schema, new SchemaFieldObjectType(MapperUtil.getSimpleType(schema, specFile)), totalSchemas, compositedSchemas, antiLoopList, specFile, baseDir));
     } else if (ApiTool.isObject(schema) && !ApiTool.hasProperties(schema)) {
-      fieldObjectArrayList.add(SchemaFieldObject
+      final var objField = SchemaFieldObject
                                    .builder()
                                    .baseName(fieldName)
                                    .dataType(new SchemaFieldObjectType(TypeConstants.OBJECT))
-                                   .build());
+                                   .required(isRequired)
+                                   .build();
+      addPropertiesToFieldObject(objField, schema);
+      fieldObjectArrayList.add(objField);
     } else if (ApiTool.isEnum(schema)) {
       fieldObjectArrayList.add(processEnumField(fieldName, schema, specFile, ApiTool.getEnumValues(schema), schema));
     } else if (!ApiTool.hasProperties(schema) && !ApiTool.isComposed(schema)) {
-      fieldObjectArrayList.add(SchemaFieldObject
+      final var simpleObj = SchemaFieldObject
                                    .builder()
                                    .baseName(fieldName)
                                    .dataType(new SchemaFieldObjectType(TypeConstants.OBJECT))
-                                   .build());
+                                   .required(isRequired)
+                                   .build();
+      addPropertiesToFieldObject(simpleObj, schema);
+      fieldObjectArrayList.add(simpleObj);
     } else if (ApiTool.isObject(schema)) {
       fieldObjectArrayList.addAll(processObject(fieldName, className, schema, specFile, totalSchemas, compositedSchemas, antiLoopList, baseDir));
     } else {
@@ -265,11 +286,32 @@ public final class ModelBuilder {
         compositedSchemas.put(composedSchemaName, schemaObjectComposed);
       }
 
-      fieldObjectArrayList.add(SchemaFieldObject
+      final var composedField = SchemaFieldObject
                                    .builder()
                                    .baseName(fieldName)
                                    .dataType(SchemaFieldObjectType.fromTypeList(schemaObjectComposed.getClassName(), schemaObjectComposed.getClassName()))
-                                   .build());
+                                   .required(isRequired)
+                                   .build();
+      addPropertiesToFieldObject(composedField, schema);
+      fieldObjectArrayList.add(composedField);
+
+      // ensure returned fields inherit parent's required flag when not explicity set
+      for (final var f : fieldObjectArrayList) {
+        if (!f.isRequired()) {
+          f.setRequired(isRequired);
+        }
+      }
+
+      // if fields are required but have no captured restrictions, mark them for NotNull
+      for (final var f : fieldObjectArrayList) {
+        try {
+          if (!f.isRequired() && f.getRestrictions() != null && f.getRestrictions().getProperties().isEmpty()) {
+            f.getRestrictions().getProperties().add("NotNull");
+          }
+        } catch (final Exception e) {
+          // do not fail on instrumentation
+        }
+      }    
     }
 
     return fieldObjectArrayList;
@@ -296,7 +338,7 @@ public final class ModelBuilder {
       final Map<String, JsonNode> totalSchemas, final String fieldName, final JsonNode fieldBody, final Map<String, SchemaObject> compositedSchemas, final CommonSpecFile specFile,
       final JsonNode schema, final Set<String> antiLoopList, final Path baseDir) {
     final List<SchemaFieldObject> fieldObjectArrayList = new LinkedList<>();
-    final var isRequired = ApiTool.checkIfRequired(fieldBody, fieldName);
+    final var isRequired = ApiTool.checkIfRequired(schema, fieldName);
     final SchemaFieldObject field;
     if (ApiTool.hasRef(fieldBody)) {
       final var typeName = MapperUtil.getRefSchemaName(fieldBody, fieldName);
@@ -304,46 +346,54 @@ public final class ModelBuilder {
       if (!antiLoopList.contains(typeName) && Objects.nonNull(refSchema) && ApiTool.hasType(refSchema)
           && ApiTool.hasItems(refSchema) || ApiTool.getRefValue(fieldBody).contains(fieldName)) {
         if (antiLoopList.contains(typeName) && ApiTool.getRefValue(fieldBody).contains(fieldName)) {
-          fieldObjectArrayList.add(SchemaFieldObject
+          final var inlineField = SchemaFieldObject
                                        .builder()
                                        .baseName(fieldName)
                                        .required(ApiTool.checkIfRequired(schema, fieldName))
                                        .dataType(SchemaFieldObjectType.fromTypeList(MapperUtil.getSimpleType(refSchema, specFile),
                                                                                     MapperUtil.getPojoName(typeName, specFile)))
-                                       .build());
+                                       .build();
+          addPropertiesToFieldObject(inlineField, Objects.nonNull(refSchema) ? refSchema : fieldBody);
+          fieldObjectArrayList.add(inlineField);
         } else {
           antiLoopList.add(typeName);
           fieldObjectArrayList.addAll(processFieldObjectList(buildingSchema, fieldName, typeName, refSchema, specFile, totalSchemas, compositedSchemas,
-                                                             antiLoopList, baseDir));
+                                                             antiLoopList, baseDir, ApiTool.checkIfRequired(schema, fieldName)));
          }
       } else if (ApiTool.isEnum(refSchema)) {
         fieldObjectArrayList.add(processEnumField(fieldName, refSchema, specFile, ApiTool.getEnumValues(refSchema), schema));
       } else if (ApiTool.isObject(refSchema) || ApiTool.isComposed(refSchema)) {
         compositedSchemas.put(typeName, buildSchemaObject(totalSchemas, typeName, refSchema, antiLoopList, compositedSchemas, "", specFile, baseDir));
-        fieldObjectArrayList.add(SchemaFieldObject
+        final var refField = SchemaFieldObject
                                      .builder()
                                      .baseName(fieldName)
                                      .required(ApiTool.checkIfRequired(schema, fieldName))
                                      .dataType(SchemaFieldObjectType.fromTypeList(MapperUtil.getSimpleType(refSchema, specFile),
                                                                                   MapperUtil.getPojoName(typeName, specFile)))
-                                     .build());
+                                     .build();
+        addPropertiesToFieldObject(refField, refSchema);
+        fieldObjectArrayList.add(refField);
       } else if (ApiTool.isBoolean(refSchema) || ApiTool.isString(refSchema) || ApiTool.isNumber(refSchema) || ApiTool.isDateTime(refSchema)) {
-        fieldObjectArrayList.add(SchemaFieldObject
+        final var primitiveRefField = SchemaFieldObject
                                      .builder()
                                      .baseName(fieldName)
                                      .required(ApiTool.checkIfRequired(schema, fieldName))
                                      .dataType(new SchemaFieldObjectType(MapperUtil.getSimpleType(refSchema, specFile)))
                                      .constValue(ApiTool.getConst(refSchema))
-                                     .build());
+                                     .build();
+        addPropertiesToFieldObject(primitiveRefField, refSchema);
+        fieldObjectArrayList.add(primitiveRefField);
       } else if (antiLoopList.contains(typeName) &&
                  cachedSchemas.containsKey(typeName)) {
-        fieldObjectArrayList.add(SchemaFieldObject
+        final var cachedField = SchemaFieldObject
                                      .builder()
                                      .baseName(fieldName)
                                      .required(ApiTool.checkIfRequired(schema, fieldName))
                                      .dataType(SchemaFieldObjectType.fromTypeList(MapperUtil.getSimpleType(refSchema, specFile),
                                                                                   MapperUtil.getPojoName(typeName, specFile)))
-                                     .build());
+                                     .build();
+        addPropertiesToFieldObject(cachedField, Objects.nonNull(refSchema) ? refSchema : fieldBody);
+        fieldObjectArrayList.add(cachedField);
       }
     } else if (ApiTool.isEnum(fieldBody)) {
       fieldObjectArrayList.add(processEnumField(fieldName, fieldBody, specFile, ApiTool.getEnumValues(fieldBody), fieldBody));
@@ -451,6 +501,65 @@ public final class ModelBuilder {
         default:
           break;
       }
+      try {
+        if (fieldObject.getRestrictions().getProperties().isEmpty()) {
+          if (Objects.nonNull(value) && value.isObject()) {
+            final JsonNode propsNode = value.get("properties");
+            if (propsNode != null && propsNode.isObject()) {
+              for (final var child : propsNode) {
+                if (child.has("minLength") || child.has("maxLength")) {
+                  fieldObject.getRestrictions().getProperties().add("Size");
+                }
+                if (child.has("pattern")) {
+                  fieldObject.getRestrictions().getProperties().add("Pattern");
+                }
+                if (child.has("minimum") || child.has("maximum") || child.has("exclusiveMinimum") || child.has("exclusiveMaximum")) {
+                  fieldObject.getRestrictions().getProperties().add("Minimum");
+                  fieldObject.getRestrictions().getProperties().add("Maximum");
+                }
+                if (child.has("format")) {
+                  fieldObject.getRestrictions().getProperties().add("Format");
+                }
+                if (child.has("multipleOf")) {
+                  fieldObject.getRestrictions().getProperties().add("MultipleOf");
+                }
+                if (child.has("minItems") || child.has("maxItems") || child.has("uniqueItems")) {
+                  fieldObject.getRestrictions().getProperties().add("minItems");
+                  fieldObject.getRestrictions().getProperties().add("maxItems");
+                  fieldObject.getRestrictions().getProperties().add("uniqueItems");
+                }
+              }
+            }
+            final JsonNode itemsNode = value.get("items");
+            if (itemsNode != null && itemsNode.isObject()) {
+              if (itemsNode.has("minLength") || itemsNode.has("maxLength")) {
+                fieldObject.getRestrictions().getProperties().add("Size");
+              }
+              if (itemsNode.has("pattern")) {
+                fieldObject.getRestrictions().getProperties().add("Pattern");
+              }
+              if (itemsNode.has("minimum") || itemsNode.has("maximum")) {
+                fieldObject.getRestrictions().getProperties().add("Minimum");
+                fieldObject.getRestrictions().getProperties().add("Maximum");
+              }
+              if (itemsNode.has("multipleOf")) {
+                fieldObject.getRestrictions().getProperties().add("MultipleOf");
+              }
+            }
+          }
+        }
+
+        if (fieldObject.getRestrictions().getProperties().isEmpty()) {
+          final var dir = Paths.get(System.getProperty("user.dir"), "target", "tmp-templates");
+          Files.createDirectories(dir);
+          final var out = dir.resolve("missing-restrictions.log");
+          final String line = String.format("%s|%s|%s%n", fieldObject.getBaseName(), fieldObject.getDataType() == null ? "null" : fieldObject.getDataType().toString(),
+                                            value == null ? "null" : value.toString().replaceAll("\\r?\\n", " "));
+          Files.writeString(out, line, StandardCharsets.UTF_8, StandardOpenOption.CREATE, StandardOpenOption.APPEND);
+        }
+      } catch (Exception e) {
+        // do not fail generation on logging errors
+      }
     }
   }
 
@@ -502,6 +611,7 @@ public final class ModelBuilder {
                                             .dataType(SchemaFieldObjectType.fromTypeList(TypeConstants.ARRAY, MapperUtil.getSimpleType(items, specFile)))
                                             .build();
         fieldObjectArrayList.add(field);
+        addPropertiesToFieldObject(field, items);
         addPropertiesToFieldObject(field, schema);
       }
     }
@@ -589,6 +699,7 @@ public final class ModelBuilder {
       final var field = processRef(fieldName, addPropObj,
                                    SchemaFieldObjectType.fromTypeList(TypeConstants.MAP, refSchemaName), totalSchemas, compositedSchemas,
                                    antiLoopList, specFile, baseDir);
+      addPropertiesToFieldObject(field, addPropObj);
       addPropertiesToFieldObject(field, schema);
       fieldObjectArrayList.add(field);
     } else if (ApiTool.hasItems(addPropObj)) {
@@ -598,6 +709,7 @@ public final class ModelBuilder {
                             .dataType(SchemaFieldObjectType.fromTypeList(TypeConstants.MAP, TypeConstants.ARRAY,
                                                                          MapperUtil.getSimpleType(ApiTool.getItems(addPropObj), specFile)))
                             .build();
+      addPropertiesToFieldObject(field, ApiTool.getItems(addPropObj));
       addPropertiesToFieldObject(field, schema);
       fieldObjectArrayList.add(field);
     } else if (ApiTool.isObject(addPropObj)) {
@@ -609,6 +721,7 @@ public final class ModelBuilder {
                             .baseName(ADDITIONAL_PROPERTIES)
                             .dataType(SchemaFieldObjectType.fromTypeList(TypeConstants.MAP, MapperUtil.getPojoName(className, specFile)))
                             .build();
+      addPropertiesToFieldObject(field, addPropObj);
       addPropertiesToFieldObject(field, schema);
       fieldObjectArrayList.add(field);
     } else {
@@ -621,6 +734,7 @@ public final class ModelBuilder {
                             .constValue(getConst(addPropObj))
                             .required(ApiTool.checkIfRequired(schema, fieldName) || ApiTool.hasConst(addPropObj))
                             .build();
+      addPropertiesToFieldObject(field, addPropObj);
       addPropertiesToFieldObject(field, schema);
       fieldObjectArrayList.add(field);
     }
@@ -729,12 +843,19 @@ public final class ModelBuilder {
       final Map<String, SchemaObject> compositedSchemas, final Set<String> antiLoopList, final Path baseDir) {
     final Set<SchemaFieldObject> fieldObjectArrayList = new HashSet<>();
 
-    for (JsonNode ref : schemaList) {
-      if (ApiTool.hasRef(ref)) {
-        final var schemaToProcess = totalSchemas.get(MapperUtil.getRefSchemaKey(ref));
-        ApiTool.getProperties(schemaToProcess).forEachRemaining(processProperties("", totalSchemas, compositedSchemas, fieldObjectArrayList, specFile, ref, antiLoopList, baseDir));
-        for (var fieldObject : fieldObjectArrayList) {
-          fieldObject.setRequired(true);
+    for (JsonNode item : schemaList) {
+      if (ApiTool.hasRef(item)) {
+        final var schemaToProcess = totalSchemas.get(MapperUtil.getRefSchemaKey(item));
+        if (schemaToProcess != null) {
+          ApiTool.getProperties(schemaToProcess).forEachRemaining(processProperties("", totalSchemas, compositedSchemas, fieldObjectArrayList, specFile, schemaToProcess, antiLoopList, baseDir));
+          for (var fieldObject : fieldObjectArrayList) {
+            fieldObject.setRequired(true);
+          }
+        } else if (ApiTool.hasProperties(item)) {
+          ApiTool.getProperties(item).forEachRemaining(processProperties("", totalSchemas, compositedSchemas, fieldObjectArrayList, specFile, item, antiLoopList, baseDir));
+          for (var fieldObject : fieldObjectArrayList) {
+            fieldObject.setRequired(true);
+          }
         }
       }
     }
@@ -793,6 +914,18 @@ public final class ModelBuilder {
       setFieldType(field, schema, schema, specFile, refSchemaName);
 
       solveRef(schema, totalSchemas, compositedSchemas, antiLoopList, specFile, baseDir);
+
+      try {
+        final var refTarget = totalSchemas != null ? totalSchemas.get(MapperUtil.getRefSchemaKey(schema)) : null;
+        if (Objects.nonNull(refTarget)) {
+          addPropertiesToFieldObject(field, refTarget);
+        } else {
+          // fallback: try to expect restrictions from the ref node itself
+          addPropertiesToFieldObject(field, schema);
+        }
+      } catch (Exception e) {
+        // best effort
+      }
     }
     return field;
   }

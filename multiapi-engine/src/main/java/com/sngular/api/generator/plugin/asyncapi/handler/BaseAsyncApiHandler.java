@@ -157,7 +157,7 @@ public abstract class BaseAsyncApiHandler {
     }
   }
 
-  public abstract void processFileSpec(final List<SpecFile> specsListFile);
+  public abstract void processFileSpec(final List<com.sngular.api.generator.plugin.asyncapi.parameter.SpecFile> specsListFile);
 
   protected abstract Map<String, JsonNode> getAllSchemas(final FileLocation ymlParent, final JsonNode node);
 

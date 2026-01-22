@@ -57,7 +57,7 @@ public class AsyncApi3Handler extends BaseAsyncApiHandler {
   }
 
   @Override
-  public void processFileSpec(final List<SpecFile> specsListFile) {
+  public void processFileSpec(final List<com.sngular.api.generator.plugin.asyncapi.parameter.SpecFile> specsListFile) {
     processedOperationIds.clear();
     templateFactory.setNotGenerateTemplate();
     for (final SpecFile fileParameter : specsListFile) {

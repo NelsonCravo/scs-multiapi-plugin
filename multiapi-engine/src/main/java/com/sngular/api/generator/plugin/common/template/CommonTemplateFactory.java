@@ -232,8 +232,9 @@ public abstract class CommonTemplateFactory {
       if (Objects.nonNull(classTemplate.getModelPackage())) {
         addToRoot("packageModel", classTemplate.getModelPackage());
       }
-      if (Objects.nonNull(exceptionPackage)) {
-        addToRoot(EXCEPTION_PACKAGE, exceptionPackage);
+      final String exceptionPackageToUse = Objects.nonNull(exceptionPackage) ? exceptionPackage : classTemplate.getModelPackage();
+      if (Objects.nonNull(exceptionPackageToUse)) {
+        addToRoot(EXCEPTION_PACKAGE, exceptionPackageToUse);
       }
       fillTemplate(filePath.toString(), schemaObject.getClassName(), templateName);
       if (hasCombinator(schemaObject)) {

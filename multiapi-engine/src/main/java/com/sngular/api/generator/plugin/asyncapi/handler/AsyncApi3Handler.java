@@ -356,12 +356,15 @@ public class AsyncApi3Handler extends BaseAsyncApiHandler {
   @Override
   protected Pair<String, JsonNode> processPayload(final OperationParameterObject operationObject, final String messageName, final JsonNode payload, final FileLocation ymlParent)
       throws IOException {
-    final String namespace;
     String className = messageName;
     String suffix = operationObject.getModelNameSuffix();
-    if (StringUtils.isNotBlank(suffix) && !messageName.endsWith(suffix)) {
-      className = messageName + suffix;
+    if (StringUtils.isNotBlank(className)) {
+      className = className.substring(0, 1).toUpperCase() + (className.length() > 1 ? className.substring(1) : "");
     }
+    if (StringUtils.isNotBlank(suffix) && !className.endsWith(suffix)) {
+      className = className + suffix;
+    }
+    final String namespace;
     if (ApiTool.hasRef(payload)) {
       namespace = processMessageRef(payload, operationObject.getModelPackage(), ymlParent);
     } else {

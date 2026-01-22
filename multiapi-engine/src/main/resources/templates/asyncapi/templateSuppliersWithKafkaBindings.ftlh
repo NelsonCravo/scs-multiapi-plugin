@@ -63,7 +63,7 @@ public class ${supplierClassName?cap_first} {
   private String multiapiKafkaApiKeyValue;
   @Value("<#noparse>${multiapi.schema.registry.url:}</#noparse>")
   private String multiapiSchemaRegistryUrl;
-  @Value("<#noparse>${multiapi.schema.registry.auto-register:true}")
+  @Value("<#noparse>${multiapi.schema.registry.auto-register:true}</#noparse>")
   private String multiapiSchemaAutoRegister;
   private final Environment environment;
   private final ObjectMapper objectMapper;

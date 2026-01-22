@@ -499,7 +499,7 @@ public class AsyncApi2Handler extends BaseAsyncApiHandler {
     if (StringUtils.isBlank(suffix) || StringUtils.isBlank(namespace)) {
       return namespace;
     }
-    final int lastDot = namespace.lastIndexOf(PACKAGE_SEPARATOR);
+    final int lastDot = namespace.lastIndexOf(PACKAGE_SEPARATOR_STR);
     if (lastDot >= 0 && lastDot < namespace.length() - 1) {
       final String base = namespace.substring(lastDot + 1);
       return namespace.substring(0, lastDot + 1) + base + suffix;

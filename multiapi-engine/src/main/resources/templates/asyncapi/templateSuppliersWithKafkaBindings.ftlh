@@ -40,7 +40,7 @@ import org.springframework.boot.autoconfigure.kafka.KafkaConsumerFactoryCustomiz
 public class ${supplierClassName?cap_first} {
 
   <#list publishMethods as method>
-  private final I${method.operationId?cap_first} ${method.operationId?uncap_first};
+  private final I${method.className} ${method.operationId?uncap_first};
   <#if method.replyTo?has_content>
   private long ${method.operationId?uncap_first}ReplyTimeoutMs;
   private String ${method.operationId?uncap_first}ReplyTopicOverride;
@@ -68,7 +68,7 @@ public class ${supplierClassName?cap_first} {
   private final Environment environment;
   private final ObjectMapper objectMapper;
 
-  protected ${supplierClassName?cap_first}(<#list publishMethods as method>final I${method.operationId?cap_first} ${method.operationId?uncap_first}<#sep>, </#list>,
+  protected ${supplierClassName?cap_first}(<#list publishMethods as method>final I${method.className} ${method.operationId?uncap_first}<#sep>, </#list>,
       final Environment environment, final ObjectMapper objectMapper) {
     <#list publishMethods as method>
     this.${method.operationId?uncap_first} = ${method.operationId?uncap_first};
@@ -329,8 +329,8 @@ public class ${supplierClassName?cap_first} {
   }
 
   @Bean
-  public ${method.operationId?cap_first}ReplyRegistry ${method.operationId?uncap_first}ReplyRegistry() {
-    return new ${method.operationId?cap_first}ReplyRegistry();
+  public ${method.className}ReplyRegistry ${method.operationId?uncap_first}ReplyRegistry() {
+    return new ${method.className}ReplyRegistry();
   }
 
   @Bean
@@ -346,7 +346,7 @@ public class ${supplierClassName?cap_first} {
   @Bean
   public KafkaMessageListenerContainer<<#if method.keyClassName?has_content>${method.keyClassName?cap_first}<#else>Object</#if>, ${method.className}> ${method.operationId?uncap_first}ReplyFallbackContainer(
       final ConsumerFactory<<#if method.keyClassName?has_content>${method.keyClassName?cap_first}<#else>Object</#if>, ${method.className}> consumerFactory,
-      final ${method.operationId?cap_first}ReplyRegistry registry) {
+      final ${method.className}ReplyRegistry registry) {
     final var container = new KafkaMessageListenerContainer<>(consumerFactory, ${method.operationId?uncap_first}ReplyFallbackContainerProperties());
     container.setupMessageListener((MessageListener<<#if method.keyClassName?has_content>${method.keyClassName?cap_first}<#else>Object</#if>, ${method.className}>)
         message -> {
@@ -361,7 +361,7 @@ public class ${supplierClassName?cap_first} {
 
 <#list publishMethods as method>
 <#if method.replyTo?has_content>
-  public static class ${method.operationId?cap_first}ReplyRegistry {
+  public static class ${method.className}ReplyRegistry {
     private final ConcurrentHashMap<String, CompletableFuture<${method.className}>> inflight = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<String, Consumer<${method.className}>> handlers = new ConcurrentHashMap<>();
 

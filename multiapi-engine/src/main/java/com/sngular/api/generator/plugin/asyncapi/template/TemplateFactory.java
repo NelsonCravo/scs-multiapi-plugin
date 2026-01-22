@@ -114,10 +114,10 @@ public class TemplateFactory extends CommonTemplateFactory {
       addToRoot("method", method);
 
       if (Objects.equals(method.getType(), "publish")) {
-        fillTemplate(supplierFilePath, "I" + method.getOperationId().substring(0, 1).toUpperCase() + method.getOperationId().substring(1),
+        fillTemplate(supplierFilePath, "I" + method.getClassName(),
                      checkTemplate(method.getBindingType(), TemplateIndexConstants.TEMPLATE_INTERFACE_SUPPLIERS));
       } else if (Objects.equals(method.getType(), "subscribe")) {
-        fillTemplate(subscribeFilePath, "I" + method.getOperationId().substring(0, 1).toUpperCase() + method.getOperationId().substring(1),
+        fillTemplate(subscribeFilePath, "I" + method.getClassName(),
                      checkTemplate(method.getBindingType(), TemplateIndexConstants.TEMPLATE_INTERFACE_CONSUMERS));
       }
     }

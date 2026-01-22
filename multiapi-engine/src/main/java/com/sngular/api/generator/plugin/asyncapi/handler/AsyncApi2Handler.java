@@ -331,12 +331,13 @@ public class AsyncApi2Handler extends BaseAsyncApiHandler {
   protected Pair<String, JsonNode> processPayload(final OperationParameterObject operationObject, final String messageName, final JsonNode payload, final FileLocation ymlParent)
       throws IOException {
     final String namespace;
+    final String suffix = operationObject.getModelNameSuffix();
     if (payload.has(REF)) {
       namespace = processMessageRef(payload, operationObject.getModelPackage(), ymlParent);
     } else {
       namespace = operationObject.getModelPackage() + PACKAGE_SEPARATOR_STR + messageName;
     }
-    return Pair.of(namespace, payload);
+    return Pair.of(appendSuffixToNamespace(namespace, suffix), payload);
   }
 
   @Override
@@ -492,6 +493,18 @@ public class AsyncApi2Handler extends BaseAsyncApiHandler {
     if (mqttBindings.has("retain")) {
       bindingsResult.mqttRetain(ApiTool.getNode(mqttBindings, "retain").asBoolean());
     }
+  }
+
+  private String appendSuffixToNamespace(final String namespace, final String suffix) {
+    if (StringUtils.isBlank(suffix) || StringUtils.isBlank(namespace)) {
+      return namespace;
+    }
+    final int lastDot = namespace.lastIndexOf(PACKAGE_SEPARATOR);
+    if (lastDot >= 0 && lastDot < namespace.length() - 1) {
+      final String base = namespace.substring(lastDot + 1);
+      return namespace.substring(0, lastDot + 1) + base + suffix;
+    }
+    return namespace + suffix;
   }
 
   @Override

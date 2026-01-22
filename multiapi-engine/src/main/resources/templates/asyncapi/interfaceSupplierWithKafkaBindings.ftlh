@@ -6,7 +6,7 @@ import ${method.keyClassNamespace}.${method.keyClassName};
 </#if>
 import ${supplierPackage}.MessageWrapper;
 
-public interface I${method.operationId?cap_first} {
+public interface I${method.className} {
 
   MessageWrapper<${method.className}, ${method.keyClassName?cap_first}> ${method.operationId?uncap_first}();
 }

@@ -10,7 +10,7 @@ import com.sngular.multifileplugin.testcomplexanyof.model.ApiTypeArrayDTO;
 import java.util.List;
 import java.util.ArrayList;
 import com.sngular.multifileplugin.testcomplexanyof.model.exception.ModelClassException;
-import com.sngular.multifileplugin.testcomplexanyof.model.customvalidator.NotNull;
+import com.sngular.multifileplugin.testcomplexanyof.model.customValidator.NotNull;
 
 @JsonDeserialize(builder = ApiSchemaDTO.ApiSchemaDTOBuilder.class)
 public class ApiSchemaDTO {

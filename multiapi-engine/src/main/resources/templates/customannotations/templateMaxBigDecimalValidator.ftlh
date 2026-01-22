@@ -1,4 +1,4 @@
-package ${packageModel}.customvalidator;
+package ${packageModel}.customValidator;
 
 import java.math.BigDecimal;
 import java.util.Objects;

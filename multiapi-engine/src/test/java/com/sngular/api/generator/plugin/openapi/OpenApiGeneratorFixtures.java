@@ -1305,7 +1305,7 @@ public final class OpenApiGeneratorFixtures {
 
     final String ASSETS_PATH = COMMON_PATH + "assets/";
 
-    final String CUSTOM_VALIDATOR_PATH = COMMON_PATH + "customvalidator/" + calculateJavaEEPackage(springBootVersion);
+    final String CUSTOM_VALIDATOR_PATH = COMMON_PATH + "customValidator/" + calculateJavaEEPackage(springBootVersion);
 
     final List<String> expectedTestApiFile = List.of(
         ASSETS_PATH + "testApi/" + calculateJavaEEPackage(springBootVersion) + "TestApi.java");
@@ -1657,7 +1657,7 @@ public final class OpenApiGeneratorFixtures {
       final Path pathToTarget = Path.of(resultPath.toString(), "target");
 
       if (!expectedValidatorFiles.isEmpty()) {
-        final Path pathToTargetCustomValidator = pathToTarget.resolve("generated/com/sngular/multifileplugin/testapi/model/customvalidator");
+        final Path pathToTargetCustomValidator = pathToTarget.resolve("generated/com/sngular/multifileplugin/testapi/model/customValidator");
         final File targetCustomValidatorFolder = pathToTargetCustomValidator.toFile();
         assertThat(targetCustomValidatorFolder).isNotEmptyDirectory();
         TestUtils.validateFiles(expectedValidatorFiles, targetCustomValidatorFolder);

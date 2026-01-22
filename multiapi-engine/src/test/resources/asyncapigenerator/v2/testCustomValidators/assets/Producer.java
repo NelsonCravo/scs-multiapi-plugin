@@ -1,10 +1,10 @@
-package com.sngular.scsplugin.customvalidator.model.event.producer;
+package com.sngular.scsplugin.customValidator.model.event.producer;
 
 import java.util.function.Supplier;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import com.sngular.scsplugin.customvalidator.model.event.DataDTO;
+import com.sngular.scsplugin.customValidator.model.event.DataDTO;
 
 @Configuration
 public class Producer {

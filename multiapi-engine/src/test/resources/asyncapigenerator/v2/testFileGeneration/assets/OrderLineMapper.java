@@ -9,7 +9,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.List;
 import java.util.ArrayList;
 import com.sngular.scsplugin.filegeneration.model.event.exception.ModelClassException;
-import com.sngular.scsplugin.filegeneration.model.event.customvalidator.NotNull;
+import com.sngular.scsplugin.filegeneration.model.event.customValidator.NotNull;
 
 @JsonDeserialize(builder = OrderLineMapper.OrderLineMapperBuilder.class)
 public class OrderLineMapper {

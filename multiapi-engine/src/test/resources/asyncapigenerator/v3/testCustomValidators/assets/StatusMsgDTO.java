@@ -1,4 +1,4 @@
-package com.sngular.scsplugin.customvalidator.model.event;
+package com.sngular.scsplugin.customValidator.model.event;
 
 import java.util.Objects;
 

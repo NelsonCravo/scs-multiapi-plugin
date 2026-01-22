@@ -7,7 +7,7 @@ import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 import com.sngular.scsplugin.filegeneration.model.event.exception.ModelClassException;
-import com.sngular.scsplugin.filegeneration.model.event.customvalidator.NotNull;
+import com.sngular.scsplugin.filegeneration.model.event.customValidator.NotNull;
 
 @JsonDeserialize(builder = OrderProductMapper.OrderProductMapperBuilder.class)
 public class OrderProductMapper {

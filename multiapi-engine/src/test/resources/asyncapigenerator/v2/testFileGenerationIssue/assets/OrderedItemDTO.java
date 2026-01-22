@@ -6,9 +6,9 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
-import com.sngular.scsplugin.filegenerationissue.model.event.customvalidator.Size;
+import com.sngular.scsplugin.filegenerationissue.model.event.customValidator.Size;
 import com.sngular.scsplugin.filegenerationissue.model.event.exception.ModelClassException;
-import com.sngular.scsplugin.filegenerationissue.model.event.customvalidator.NotNull;
+import com.sngular.scsplugin.filegenerationissue.model.event.customValidator.NotNull;
 
 @JsonDeserialize(builder = OrderedItemDTO.OrderedItemDTOBuilder.class)
 public class OrderedItemDTO {

@@ -10,7 +10,7 @@ import java.util.List;
 import java.util.ArrayList;
 import java.math.BigDecimal;
 import com.sngular.scsplugin.reservedwordsgeneration.model.event.exception.ModelClassException;
-import com.sngular.scsplugin.reservedwordsgeneration.model.event.customvalidator.NotNull;
+import com.sngular.scsplugin.reservedwordsgeneration.model.event.customValidator.NotNull;
 
 @JsonDeserialize(builder = OrderLineDTO.OrderLineDTOBuilder.class)
 public class OrderLineDTO {

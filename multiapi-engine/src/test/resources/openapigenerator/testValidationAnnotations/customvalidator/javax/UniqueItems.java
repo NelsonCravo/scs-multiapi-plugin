@@ -1,4 +1,4 @@
-package com.sngular.multifileplugin.testapi.model.customvalidator;
+package com.sngular.multifileplugin.testapi.model.customValidator;
 
 import javax.validation.Constraint;
 import javax.validation.Payload;

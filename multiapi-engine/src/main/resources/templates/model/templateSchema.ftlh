@@ -97,53 +97,53 @@ import ${import};
 <#list schema.fieldObjectList as field>
   <#if (field.restrictions.maxLength?has_content || field.restrictions.minLength?has_content) && !(visited?contains("size"))>
   <#assign visited += "size," />
-import ${packageModel}.customvalidator.Size;
+import ${packageModel}.customValidator.Size;
   </#if>
   <#if field.restrictions.maximum?has_content>
     <#if field.dataType.baseType?lower_case == "bigdecimal" && !(visited?contains("maxBigDecimal"))>
       <#assign visited += "maxBigDecimal," />
-import ${packageModel}.customvalidator.MaxBigDecimal;
+import ${packageModel}.customValidator.MaxBigDecimal;
     <#elseif field.dataType.baseType?lower_case == "integer" &&  !(visited?contains("maxInteger"))>
     <#assign visited += "maxInteger," />
-import ${packageModel}.customvalidator.MaxInteger;
+import ${packageModel}.customValidator.MaxInteger;
     <#elseif field.dataType.baseType?lower_case == "float" &&  !(visited?contains("maxFloat"))>
     <#assign visited += "maxFloat," />
-import ${packageModel}.customvalidator.MaxFloat;
+import ${packageModel}.customValidator.MaxFloat;
     <#elseif field.dataType.baseType?lower_case == "double" &&  !(visited?contains("maxDouble"))>
     <#assign visited += "maxDouble," />
-import ${packageModel}.customvalidator.MaxDouble;
+import ${packageModel}.customValidator.MaxDouble;
     </#if>
   </#if>
     <#if  field.restrictions.minimum?has_content>
     <#if field.dataType.baseType?lower_case == "bigdecimal" &&  !(visited?contains("minBigDecimal"))>
     <#assign visited += "minBigDecimal," />
-import ${packageModel}.customvalidator.MinBigDecimal;
+import ${packageModel}.customValidator.MinBigDecimal;
     <#elseif field.dataType.baseType?lower_case == "integer" &&  !(visited?contains("minInteger"))>
     <#assign visited += "minInteger," />
-import ${packageModel}.customvalidator.MinInteger;
+import ${packageModel}.customValidator.MinInteger;
     <#elseif field.dataType.baseType?lower_case == "float" &&  !(visited?contains("minFloat"))>
     <#assign visited += "minFloat," />
-import ${packageModel}.customvalidator.MinFloat;
+import ${packageModel}.customValidator.MinFloat;
     <#elseif field.dataType.baseType?lower_case == "double" &&  !(visited?contains("minDouble"))>
     <#assign visited += "minDouble," />
-import ${packageModel}.customvalidator.MinDouble;
+import ${packageModel}.customValidator.MinDouble;
     </#if>
     </#if>
   <#if  field.restrictions.maxItems?has_content && !(visited?contains("maxItems"))>
   <#assign visited += "maxItems," />
-import ${packageModel}.customvalidator.MaxItems;
+import ${packageModel}.customValidator.MaxItems;
     </#if>
     <#if  field.restrictions.minItems?has_content && !(visited?contains("minItems"))>
       <#assign visited += "minItems," />
-import ${packageModel}.customvalidator.MinItems;
+import ${packageModel}.customValidator.MinItems;
     </#if>
     <#if  field.restrictions.maxProperties?has_content && !(visited?contains("maxProperties"))>
       <#assign visited += "maxProperties," />
-import ${packageModel}.customvalidator.MaxProperties;
+import ${packageModel}.customValidator.MaxProperties;
     </#if>
     <#if  field.restrictions.minProperties?has_content && !(visited?contains("minProperties"))>
       <#assign visited += "minProperties," />
-import ${packageModel}.customvalidator.MinProperties;
+import ${packageModel}.customValidator.MinProperties;
     </#if>
     <#if  field.restrictions.format?has_content && !(visited?contains("format"))>
       <#assign visited += "format,"  />
@@ -155,19 +155,19 @@ import ${exceptionPackage}.exception.ModelClassException;
     </#if>
     <#if  field.restrictions.pattern?has_content && !(visited?contains("pattern"))>
       <#assign visited +=  "pattern,"  />
-import ${packageModel}.customvalidator.Pattern;
+import ${packageModel}.customValidator.Pattern;
     </#if>
     <#if  field.restrictions.multipleOf?has_content && !(visited?contains("multipleOf"))>
       <#assign visited += "multipleOf,"  />
-import ${packageModel}.customvalidator.MultipleOf;
+import ${packageModel}.customValidator.MultipleOf;
     </#if>
     <#if  field.required?has_content && field.required == true && !(visited?contains("notNull"))>
       <#assign visited += "notNull," />
-import ${packageModel}.customvalidator.NotNull;
+import ${packageModel}.customValidator.NotNull;
     </#if>
     <#if field.restrictions.uniqueItems?has_content && field.restrictions.uniqueItems == true && !(visited?contains("uniqueItems"))>
       <#assign visited += "uniqueItems," />
-import ${packageModel}.customvalidator.UniqueItems;
+import ${packageModel}.customValidator.UniqueItems;
   </#if>
 </#list>
 

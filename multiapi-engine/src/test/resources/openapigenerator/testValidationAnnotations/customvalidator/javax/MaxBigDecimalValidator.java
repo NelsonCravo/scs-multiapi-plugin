@@ -1,4 +1,4 @@
-package com.sngular.multifileplugin.testapi.model.customvalidator;
+package com.sngular.multifileplugin.testapi.model.customValidator;
 
 import java.math.BigDecimal;
 import java.util.Objects;

@@ -1,4 +1,4 @@
-package com.sngular.scsplugin.filegenerationwithkafkabindings.model.event.customvalidator;
+package com.sngular.scsplugin.filegenerationwithkafkabindings.model.event.customValidator;
 
 import javax.validation.Constraint;
 import javax.validation.Payload;

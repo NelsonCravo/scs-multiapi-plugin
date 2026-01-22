@@ -7,7 +7,7 @@ import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 import com.sngular.multifileplugin.externalref.model.exception.ModelClassException;
-import com.sngular.multifileplugin.externalref.model.customvalidator.NotNull;
+import com.sngular.multifileplugin.externalref.model.customValidator.NotNull;
 
 @JsonDeserialize(builder = ApiTestDTO.ApiTestDTOBuilder.class)
 public class ApiTestDTO {

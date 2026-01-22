@@ -268,7 +268,7 @@ public abstract class CommonTemplateFactory {
   private void fillTemplateCustom(
       final Path filePathToSave, final String modelPackage, final String fileNameAnnotation, final String templateAnnotation,
       final String fileNameValidator, final String templateValidator) throws IOException {
-    final Path pathToCustomValidatorPackage = filePathToSave.resolve("customvalidator");
+    final Path pathToCustomValidatorPackage = filePathToSave.resolve("customValidator");
     if (!pathToCustomValidatorPackage.toFile().exists() && !pathToCustomValidatorPackage.toFile().mkdirs()) {
       throw new IOException("Can't create custom validator directory");
     }

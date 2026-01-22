@@ -133,14 +133,14 @@ public class AsyncApiGeneratorFixtures {
           .consumer(OperationParameterObject.builder()
               .ids("customValidatorResponse")
               .modelNameSuffix("DTO")
-              .apiPackage("com.sngular.scsplugin.customvalidator.model.event.consumer")
-              .modelPackage("com.sngular.scsplugin.customvalidator.model.event")
+              .apiPackage("com.sngular.scsplugin.customValidator.model.event.consumer")
+              .modelPackage("com.sngular.scsplugin.customValidator.model.event")
               .build())
           .supplier(OperationParameterObject.builder()
               .ids("customValidatorClients")
               .modelNameSuffix("DTO")
-              .apiPackage("com.sngular.scsplugin.customvalidator.model.event.producer")
-              .modelPackage("com.sngular.scsplugin.customvalidator.model.event")
+              .apiPackage("com.sngular.scsplugin.customValidator.model.event.producer")
+              .modelPackage("com.sngular.scsplugin.customValidator.model.event")
               .build())
           .build()
   );
@@ -438,13 +438,13 @@ public class AsyncApiGeneratorFixtures {
 
     final String DEFAULT_PRODUCER_FOLDER = DEFAULT_COMMON_FOLDER + "/producer";
 
-    final String DEFAULT_CUSTOM_VALIDATOR_FOLDER = DEFAULT_COMMON_FOLDER + "/customvalidator";
+    final String DEFAULT_CUSTOM_VALIDATOR_FOLDER = DEFAULT_COMMON_FOLDER + "/customValidator";
 
     final String COMMON_PATH = "asyncapigenerator/v2/testFileGeneration/";
 
     final String ASSETS_PATH = COMMON_PATH + "assets/";
 
-    final String CUSTOM_VALIDATOR_PATH = COMMON_PATH + "customvalidator/";
+    final String CUSTOM_VALIDATOR_PATH = COMMON_PATH + "customValidator/";
 
     final String DEFAULT_EXCEPTION_API = DEFAULT_COMMON_FOLDER + "/exception";
 
@@ -529,13 +529,13 @@ public class AsyncApiGeneratorFixtures {
     return result;
   }
 
-  private static boolean customValidatorTest(final Path resultPath, final List<String> expectedValidatorFiles, final String default_customvalidator_folder) {
+  private static boolean customValidatorTest(final Path resultPath, final List<String> expectedValidatorFiles, final String default_customValidator_folder) {
     Boolean result = Boolean.TRUE;
     try {
       final Path pathToTarget = Path.of(resultPath.toString(), "target");
 
       if (!expectedValidatorFiles.isEmpty()) {
-        final Path pathToTargetCustomValidator = pathToTarget.resolve(default_customvalidator_folder);
+        final Path pathToTargetCustomValidator = pathToTarget.resolve(default_customValidator_folder);
         final File targetCustomValidatorFolder = pathToTargetCustomValidator.toFile();
         Assertions.assertThat(targetCustomValidatorFolder).isNotEmptyDirectory();
         TestUtils.validateFiles(expectedValidatorFiles, targetCustomValidatorFolder);
@@ -664,19 +664,19 @@ public class AsyncApiGeneratorFixtures {
   }
 
   static Function<Path, Boolean> validateCustomValidators(final int springBootVersion) {
-    final String DEFAULT_CONSUMER_FOLDER = "generated/com/sngular/scsplugin/customvalidator/model/event/consumer";
+    final String DEFAULT_CONSUMER_FOLDER = "generated/com/sngular/scsplugin/customValidator/model/event/consumer";
 
-    final String DEFAULT_PRODUCER_FOLDER = "generated/com/sngular/scsplugin/customvalidator/model/event/producer";
+    final String DEFAULT_PRODUCER_FOLDER = "generated/com/sngular/scsplugin/customValidator/model/event/producer";
 
-    final String DEFAULT_CUSTOM_VALIDATOR_FOLDER = "generated/com/sngular/scsplugin/customvalidator/model/event/customvalidator";
+    final String DEFAULT_CUSTOM_VALIDATOR_FOLDER = "generated/com/sngular/scsplugin/customValidator/model/event/customValidator";
 
     final String COMMON_PATH = "asyncapigenerator/v2/testCustomValidators/";
 
-    final String DEFAULT_MODEL_SCHEMA_FOLDER = "generated/com/sngular/scsplugin/customvalidator/model/event";
+    final String DEFAULT_MODEL_SCHEMA_FOLDER = "generated/com/sngular/scsplugin/customValidator/model/event";
 
     final String ASSETS_PATH = COMMON_PATH + "assets/";
 
-    final String CUSTOM_VALIDATOR_PATH = COMMON_PATH + "customvalidator/" + calculateJavaEEPackage(springBootVersion);
+    final String CUSTOM_VALIDATOR_PATH = COMMON_PATH + "customValidator/" + calculateJavaEEPackage(springBootVersion);
 
     final String DEFAULT_EXCEPTION_API = DEFAULT_MODEL_SCHEMA_FOLDER + "/exception";
 
@@ -751,13 +751,13 @@ public class AsyncApiGeneratorFixtures {
 
     final String DEFAULT_PRODUCER_FOLDER = DEFAULT_COMMON_FOLDER + "/producer";
 
-    final String DEFAULT_CUSTOM_VALIDATOR_FOLDER = DEFAULT_COMMON_FOLDER + "/customvalidator";
+    final String DEFAULT_CUSTOM_VALIDATOR_FOLDER = DEFAULT_COMMON_FOLDER + "/customValidator";
 
     final String COMMON_PATH = "asyncapigenerator/v2/testFileGenerationIssue/";
 
     final String ASSETS_PATH = COMMON_PATH + "assets/";
 
-    final String CUSTOM_VALIDATOR_PATH = COMMON_PATH + "customvalidator/";
+    final String CUSTOM_VALIDATOR_PATH = COMMON_PATH + "customValidator/";
 
     final String DEFAULT_EXCEPTION_API = DEFAULT_COMMON_FOLDER + "/exception";
 
@@ -923,13 +923,13 @@ public class AsyncApiGeneratorFixtures {
 
     final String DEFAULT_PRODUCER_FOLDER = DEFAULT_COMMON_FOLDER + "/producer";
 
-    final String DEFAULT_CUSTOM_VALIDATOR_FOLDER = DEFAULT_COMMON_FOLDER + "/customvalidator";
+    final String DEFAULT_CUSTOM_VALIDATOR_FOLDER = DEFAULT_COMMON_FOLDER + "/customValidator";
 
     final String COMMON_PATH = "asyncapigenerator/v2/testModelClassExceptionGeneration/";
 
     final String ASSETS_PATH = COMMON_PATH + "assets/";
 
-    final String CUSTOM_VALIDATOR_PATH = COMMON_PATH + "customvalidator/";
+    final String CUSTOM_VALIDATOR_PATH = COMMON_PATH + "customValidator/";
 
     final String DEFAULT_EXCEPTION_API = DEFAULT_COMMON_FOLDER + "/exception";
 
@@ -1061,13 +1061,13 @@ public class AsyncApiGeneratorFixtures {
 
     final String DEFAULT_PRODUCER_FOLDER = DEFAULT_COMMON_FOLDER + "/producer";
 
-    final String DEFAULT_CUSTOM_VALIDATOR_FOLDER = DEFAULT_COMMON_FOLDER + "/customvalidator";
+    final String DEFAULT_CUSTOM_VALIDATOR_FOLDER = DEFAULT_COMMON_FOLDER + "/customValidator";
 
     final String COMMON_PATH = "asyncapigenerator/v2/testFileGenerationWithKafkaBindings/";
 
     final String ASSETS_PATH = COMMON_PATH + "assets/";
 
-    final String CUSTOM_VALIDATOR_PATH = COMMON_PATH + "customvalidator/";
+    final String CUSTOM_VALIDATOR_PATH = COMMON_PATH + "customValidator/";
 
     final List<String> expectedConsumerFiles = List.of(
         ASSETS_PATH + "consumer/IPublishOperationFileGenerationWithKafkaBindings.java",

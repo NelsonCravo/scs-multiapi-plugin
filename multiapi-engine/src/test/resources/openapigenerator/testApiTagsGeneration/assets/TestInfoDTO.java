@@ -9,7 +9,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.List;
 import java.util.ArrayList;
 import com.sngular.multifileplugin.tagsgeneration.model.exception.ModelClassException;
-import com.sngular.multifileplugin.tagsgeneration.model.customvalidator.NotNull;
+import com.sngular.multifileplugin.tagsgeneration.model.customValidator.NotNull;
 
 @JsonDeserialize(builder = TestInfoDTO.TestInfoDTOBuilder.class)
 public class TestInfoDTO {

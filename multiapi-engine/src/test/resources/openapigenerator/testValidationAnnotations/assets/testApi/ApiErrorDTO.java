@@ -8,16 +8,16 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.List;
 import java.util.ArrayList;
-import com.sngular.multifileplugin.testapi.model.customvalidator.MaxInteger;
-import com.sngular.multifileplugin.testapi.model.customvalidator.MinInteger;
+import com.sngular.multifileplugin.testapi.model.customValidator.MaxInteger;
+import com.sngular.multifileplugin.testapi.model.customValidator.MinInteger;
 import com.sngular.multifileplugin.testapi.model.exception.ModelClassException;
-import com.sngular.multifileplugin.testapi.model.customvalidator.MultipleOf;
-import com.sngular.multifileplugin.testapi.model.customvalidator.NotNull;
-import com.sngular.multifileplugin.testapi.model.customvalidator.Size;
-import com.sngular.multifileplugin.testapi.model.customvalidator.Pattern;
-import com.sngular.multifileplugin.testapi.model.customvalidator.MaxItems;
-import com.sngular.multifileplugin.testapi.model.customvalidator.MinItems;
-import com.sngular.multifileplugin.testapi.model.customvalidator.UniqueItems;
+import com.sngular.multifileplugin.testapi.model.customValidator.MultipleOf;
+import com.sngular.multifileplugin.testapi.model.customValidator.NotNull;
+import com.sngular.multifileplugin.testapi.model.customValidator.Size;
+import com.sngular.multifileplugin.testapi.model.customValidator.Pattern;
+import com.sngular.multifileplugin.testapi.model.customValidator.MaxItems;
+import com.sngular.multifileplugin.testapi.model.customValidator.MinItems;
+import com.sngular.multifileplugin.testapi.model.customValidator.UniqueItems;
 
 @JsonDeserialize(builder = ApiErrorDTO.ApiErrorDTOBuilder.class)
 public class ApiErrorDTO {

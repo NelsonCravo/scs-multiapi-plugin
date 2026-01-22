@@ -9,7 +9,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.List;
 import java.util.ArrayList;
 import com.sngular.generator.multiapi.rest.model.exception.ModelClassException;
-import com.sngular.generator.multiapi.rest.model.customvalidator.NotNull;
+import com.sngular.generator.multiapi.rest.model.customValidator.NotNull;
 
 @JsonDeserialize(builder = ApiTestInfoDTO.ApiTestInfoDTOBuilder.class)
 public class ApiTestInfoDTO {

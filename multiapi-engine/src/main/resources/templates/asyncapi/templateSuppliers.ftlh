@@ -5,7 +5,7 @@ import java.util.function.Supplier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 <#list publishMethods as method>
-import ${method.classNamespace}.${method.className}<#if supplierEntitiesSuffix?has_content>${supplierEntitiesSuffix}</#if>;
+import ${method.classNamespace}.${method.className};
 </#list>
 
 @Configuration
@@ -23,7 +23,7 @@ public class ${supplierClassName?cap_first} {
 
 <#list publishMethods as method>
   @Bean
-  public Supplier<${method.className}<#if supplierEntitiesSuffix?has_content>${supplierEntitiesSuffix}</#if>> ${method.operationId?uncap_first}() {
+  public Supplier<${method.className}> ${method.operationId?uncap_first}() {
     // action: ${method.action}
     <#if method.serverBindings?has_content || method.channelBindings?has_content || method.operationBindings?has_content || method.messageBindings?has_content>
     // bindings: server=${method.serverBindings!"-"}, channel=${method.channelBindings!"-"}, operation=${method.operationBindings!"-"}, message=${method.messageBindings!"-"}

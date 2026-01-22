@@ -288,12 +288,9 @@ public abstract class BaseAsyncApiHandler {
   }
 
   protected void processEntitiesSuffix(final SpecFile fileParameter) {
-    templateFactory.setSupplierEntitiesSuffix(fileParameter.getSupplier() != null && fileParameter.getSupplier().getModelNameSuffix() != null
-                                                  ? fileParameter.getSupplier().getModelNameSuffix() : null);
-    templateFactory.setStreamBridgeEntitiesSuffix(fileParameter.getStreamBridge() != null && fileParameter.getStreamBridge().getModelNameSuffix() != null
-                                                      ? fileParameter.getStreamBridge().getModelNameSuffix() : null);
-    templateFactory.setSubscribeEntitiesSuffix(fileParameter.getConsumer() != null && fileParameter.getConsumer().getModelNameSuffix() != null
-                                                   ? fileParameter.getConsumer().getModelNameSuffix() : null);
+    templateFactory.setSupplierEntitiesSuffix(null);
+    templateFactory.setStreamBridgeEntitiesSuffix(null);
+    templateFactory.setSubscribeEntitiesSuffix(null);
   }
 
   protected void processJavaEEPackage(final Integer springBootVersion) {

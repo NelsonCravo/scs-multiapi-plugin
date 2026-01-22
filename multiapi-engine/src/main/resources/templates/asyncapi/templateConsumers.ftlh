@@ -5,7 +5,7 @@ import java.util.function.Consumer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 <#list subscribeMethods as method>
-import ${method.classNamespace}.${method.className}<#if subscribeEntitiesSuffix?has_content>${subscribeEntitiesSuffix}</#if>;
+import ${method.classNamespace}.${method.className};
 </#list>
 
 @Configuration
@@ -23,7 +23,7 @@ public class ${subscribeClassName?cap_first} {
 
 <#list subscribeMethods as method>
   @Bean
-  public Consumer<${method.className}<#if subscribeEntitiesSuffix?has_content>${subscribeEntitiesSuffix}</#if>> ${method.operationId?uncap_first}() {
+  public Consumer<${method.className}> ${method.operationId?uncap_first}() {
     // action: ${method.action}
     <#if method.serverBindings?has_content || method.channelBindings?has_content || method.operationBindings?has_content || method.messageBindings?has_content>
     // bindings: server=${method.serverBindings!"-"}, channel=${method.channelBindings!"-"}, operation=${method.operationBindings!"-"}, message=${method.messageBindings!"-"}

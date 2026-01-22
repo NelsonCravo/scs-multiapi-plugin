@@ -17,7 +17,7 @@ import com.fasterxml.jackson.core.JsonPointer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 <#list publishMethods as method>
-import ${method.classNamespace}.${method.className}<#if supplierEntitiesSuffix?has_content>${supplierEntitiesSuffix}</#if>;
+import ${method.classNamespace}.${method.className};
 <#if method.keyClassNamespace?has_content>
 import ${method.keyClassNamespace}.${method.keyClassName};
 </#if></#list>
@@ -212,7 +212,7 @@ public class ${supplierClassName?cap_first} {
 
 <#list publishMethods as method>
   @Bean
-  public Supplier<Message<${method.className}<#if supplierEntitiesSuffix?has_content>${supplierEntitiesSuffix}</#if>>> ${method.operationId?uncap_first}() {
+  public Supplier<Message<${method.className}>> ${method.operationId?uncap_first}() {
     final var messageWrapper =  ${method.operationId?uncap_first}.${method.operationId?uncap_first}();
     final String resolvedCorrelationId = messageWrapper.getCorrelationId() != null ? messageWrapper.getCorrelationId() : UUID.randomUUID().toString();
     final String configuredReplyTopic = <#if method.replyTo?has_content>${method.operationId?uncap_first}ReplyTopicOverride</#if><#if !method.replyTo?has_content>null</#if>;
@@ -262,7 +262,7 @@ public class ${supplierClassName?cap_first} {
     <#if method.cloudEvent?? && method.cloudEvent>
     // CloudEvent: headers will be propagated (specversion/id/type/source/subject/time/dataSchema/dataContentType)
     </#if>
-    final var messageBuilder = MessageBuilder.withPayload((${method.className}<#if supplierEntitiesSuffix?has_content>${supplierEntitiesSuffix}</#if>) messageWrapper.getPayload())
+    final var messageBuilder = MessageBuilder.withPayload((${method.className}) messageWrapper.getPayload())
                                .setHeader(KafkaHeaders.${kafkaKeyHeader}, (<#if method.keyClassName?has_content>${method.keyClassName?cap_first}<#else>Object</#if>) finalKey);
                                <#if method.kafkaSaslMechanism?has_content>
     messageBuilder.setHeader("kafka_sasl_mechanism", "${method.kafkaSaslMechanism}");

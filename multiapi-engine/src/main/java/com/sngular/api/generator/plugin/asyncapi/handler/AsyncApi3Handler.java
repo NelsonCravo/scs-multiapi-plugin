@@ -250,7 +250,7 @@ public class AsyncApi3Handler extends BaseAsyncApiHandler {
     if (StringUtils.isNotBlank(className)) {
       className = className.substring(0, 1).toUpperCase() + (className.length() > 1 ? className.substring(1) : "");
     }
-    if (StringUtils.isNotBlank(suffix) && !className.endsWith(suffix)) {
+    if (StringUtils.isNotBlank(suffix)) {
       className = className + suffix;
     }
     final String keyClassName = keyClassFullName != null ? keyClassFullName.substring(keyClassFullName.lastIndexOf(".") + 1) : null;
@@ -361,7 +361,7 @@ public class AsyncApi3Handler extends BaseAsyncApiHandler {
     if (StringUtils.isNotBlank(className)) {
       className = className.substring(0, 1).toUpperCase() + (className.length() > 1 ? className.substring(1) : "");
     }
-    if (StringUtils.isNotBlank(suffix) && !className.endsWith(suffix)) {
+    if (StringUtils.isNotBlank(suffix)) {
       className = className + suffix;
     }
     final String namespace;
@@ -384,7 +384,7 @@ public class AsyncApi3Handler extends BaseAsyncApiHandler {
     }
     String refClassName = MapperUtil.getRefClass(method);
     String suffix = operationObject.getModelNameSuffix();
-    if (StringUtils.isNotBlank(suffix) && !refClassName.endsWith(suffix)) {
+    if (StringUtils.isNotBlank(suffix)) {
       refClassName = refClassName + suffix;
     }
     return processPayload(operationObject, refClassName, solvePayload(message, totalSchemas, ymlParent), ymlParent);

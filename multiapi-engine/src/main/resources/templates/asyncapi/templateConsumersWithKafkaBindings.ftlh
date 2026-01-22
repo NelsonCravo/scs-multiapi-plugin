@@ -14,7 +14,7 @@ import com.fasterxml.jackson.core.JsonPointer;
 import org.springframework.boot.autoconfigure.kafka.KafkaConsumerFactoryCustomizer;
 import org.springframework.boot.autoconfigure.kafka.KafkaProducerFactoryCustomizer;
 <#list subscribeMethods as method>
-import ${method.classNamespace}.${method.className}<#if subscribeEntitiesSuffix?has_content>${subscribeEntitiesSuffix}</#if>;
+import ${method.classNamespace}.${method.className};
 <#if method.keyClassNamespace?has_content>
 import ${method.keyClassNamespace}.${method.keyClassName};
 </#if>
@@ -61,7 +61,7 @@ public class ${subscribeClassName?cap_first} {
 
 <#list subscribeMethods as method>
   @Bean
-  public Consumer<Message<${method.className}<#if subscribeEntitiesSuffix?has_content>${subscribeEntitiesSuffix}</#if>>> ${method.operationId?uncap_first}() {
+  public Consumer<Message<${method.className}>> ${method.operationId?uncap_first}() {
     return value -> {
       final var previousTraceId = MDC.get("traceId");
       final var previousTraceparent = MDC.get("traceparent");
@@ -74,7 +74,7 @@ public class ${subscribeClassName?cap_first} {
       if (value.getHeaders().get("traceparent") != null) {
         MDC.put("traceparent", value.getHeaders().get("traceparent").toString());
       }
-      final var messageWrapper = MessageWrapper.<${method.className}<#if subscribeEntitiesSuffix?has_content>${subscribeEntitiesSuffix}</#if>, ${method.keyClassName?cap_first}>builder()
+      final var messageWrapper = MessageWrapper.<${method.className}, ${method.keyClassName?cap_first}>builder()
                                               .payload(value.getPayload())
                                               .key(resolveKey(value, ${method.keyClassName?cap_first}.class<#if method.keySelector?has_content>, "${method.keySelector}"</#if>))
                                               .correlationId(effectiveCorrelation)

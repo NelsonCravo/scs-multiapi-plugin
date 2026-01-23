@@ -31,6 +31,6 @@ public final class NameUtils {
         }
 
         String withPrefix = (prefix == null ? "" : prefix) + baseName;
-        return withOneSuffix(withPrefix, suffix);
+        return withSuffix(withPrefix, suffix);
     }
 }

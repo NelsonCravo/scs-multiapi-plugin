@@ -1,4 +1,4 @@
-package com.sngular.multifileplugin.testapi.model.customvalidator;
+package com.sngular.multifileplugin.testapi.model.customValidator;
 
 import jakarta.validation.Constraint;
 import jakarta.validation.Payload;

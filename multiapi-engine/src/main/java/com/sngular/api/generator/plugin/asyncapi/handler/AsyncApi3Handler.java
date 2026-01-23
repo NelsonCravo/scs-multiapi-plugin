@@ -366,7 +366,7 @@ public class AsyncApi3Handler extends BaseAsyncApiHandler {
     }
     final String namespace;
     if (ApiTool.hasRef(payload)) {
-      namespace = processMessageRef(payload, operationObject.getModelPackage(), ymlParent);
+      namespace = appendSuffixToNamespace(processMessageRef(payload, operationObject.getModelPackage(), ymlParent), suffix);
     } else {
       namespace = operationObject.getModelPackage() + PACKAGE_SEPARATOR_STR + className;
     }
@@ -382,12 +382,7 @@ public class AsyncApi3Handler extends BaseAsyncApiHandler {
     if (ApiTool.hasNode(message, BINDINGS)) {
       processBindings(bindingsResult, message, operationObject);
     }
-    String refClassName = MapperUtil.getRefClass(method);
-    String suffix = operationObject.getModelNameSuffix();
-    if (StringUtils.isNotBlank(suffix)) {
-      refClassName = refClassName + suffix;
-    }
-    return processPayload(operationObject, refClassName, solvePayload(message, totalSchemas, ymlParent), ymlParent);
+    return processPayload(operationObject, MapperUtil.getRefClass(method), solvePayload(message, totalSchemas, ymlParent), ymlParent);
   }
 
   @Override
@@ -513,6 +508,18 @@ public class AsyncApi3Handler extends BaseAsyncApiHandler {
     if (mqttBindings.has("retain")) {
       bindingsResult.mqttRetain(ApiTool.getNode(mqttBindings, "retain").asBoolean());
     }
+  }
+
+  private String appendSuffixToNamespace(final String namespace, final String suffix) {
+    if (StringUtils.isBlank(suffix) || StringUtils.isBlank(namespace)) {
+      return namespace;
+    }
+    final int lastDot = namespace.lastIndexOf(PACKAGE_SEPARATOR_STR);
+    if (lastDot >= 0 && lastDot < namespace.length() - 1) {
+      final String base = namespace.substring(lastDot + 1);
+      return namespace.substring(0, lastDot + 1) + base + suffix;
+    }
+    return namespace + suffix;
   }
 
   private void processWebsocketBindings(final ProcessBindingsResult.ProcessBindingsResultBuilder bindingsResult, final JsonNode wsBindings) {

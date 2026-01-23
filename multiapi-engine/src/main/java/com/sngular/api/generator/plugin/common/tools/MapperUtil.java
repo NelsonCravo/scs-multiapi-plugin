@@ -74,9 +74,13 @@ public class MapperUtil {
 
   public static String getPojoName(final String namePojo, final CommonSpecFile specFile) {
     final String baseName = MapperUtil.toPascalCase(namePojo);
-    return (StringUtils.isNotBlank(specFile.getModelNamePrefix()) ? specFile.getModelNamePrefix() : "")
-           + baseName
-           + (StringUtils.isNotBlank(specFile.getModelNameSuffix()) ? specFile.getModelNameSuffix() : "");
+    final String prefixed = (StringUtils.isNotBlank(specFile.getModelNamePrefix()) ? specFile.getModelNamePrefix() : "")
+                            + baseName;
+    final String suffix = specFile.getModelNameSuffix();
+    if (StringUtils.isNotBlank(suffix) && !prefixed.endsWith(suffix)) {
+      return prefixed + suffix;
+    }
+    return prefixed;
   }
 
   private static String toPascalCase(final String rawName) {

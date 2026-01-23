@@ -73,35 +73,27 @@ public class TemplateFactory extends CommonTemplateFactory {
     addToRoot("subscribeMethods", subscribeMethods);
     addToRoot("streamBridgeMethods", streamBridgeMethods);
 
-    // Ajuste de nomes antes de chamar templates
-    if (supplierClassName != null) {
-      supplierClassName = NameUtils.withSuffix(supplierClassName, "Supplier");
-    }
-    if (subscribeClassName != null) {
-      subscribeClassName = NameUtils.withSuffix(subscribeClassName, "Consumer");
-    }
-    if (streamBridgeClassName != null) {
-      streamBridgeClassName = NameUtils.withSuffix(streamBridgeClassName, "Bridge");
-    }
-
     for (final var method : publishMethods) {
+      String finalSupplierClassName = NameUtils.withSuffix(method.getClassName(), "Supplier");
       fillTemplate(
           supplierFilePath,
-          supplierClassName,
+          finalSupplierClassName,
           checkTemplate(method.getBindingType(), TemplateIndexConstants.TEMPLATE_API_SUPPLIERS));
     }
 
     for (final var method : subscribeMethods) {
+      String finalSubscribeClassName = NameUtils.withSuffix(method.getClassName(), "Consumer");
       fillTemplate(
           subscribeFilePath,
-          subscribeClassName,
+          finalSubscribeClassName,
           checkTemplate(method.getBindingType(), TemplateIndexConstants.TEMPLATE_API_CONSUMERS));
     }
 
     for (final var method : streamBridgeMethods) {
+      String finalStreamBridgeClassName = NameUtils.withSuffix(method.getClassName(), "Bridge");
       fillTemplate(
           streamBridgeFilePath,
-          streamBridgeClassName,
+          finalStreamBridgeClassName,
           checkTemplate(method.getBindingType(), TemplateIndexConstants.TEMPLATE_API_STREAM_BRIDGE));
     }
 
@@ -112,7 +104,6 @@ public class TemplateFactory extends CommonTemplateFactory {
           TemplateIndexConstants.TEMPLATE_SCHEMA_REGISTRY_CONFIG);
     }
 
-    // Gera demais templates e interfaces
     generateTemplates();
     generateInterfaces();
   }

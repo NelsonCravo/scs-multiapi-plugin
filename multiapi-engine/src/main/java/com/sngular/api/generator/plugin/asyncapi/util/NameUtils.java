@@ -15,10 +15,6 @@ public final class NameUtils {
         if (baseName == null || baseName.isEmpty() || suffix == null || suffix.isEmpty()) {
             return baseName;
         }
-        // Avoid concatenation when the base already ends with the suffix
-        if (baseName.endsWith(suffix)) {
-            return baseName;
-        }
         return baseName + suffix;
     }
 
@@ -30,7 +26,11 @@ public final class NameUtils {
      * @return
      */
     public static String withPrefixAndSuffix(String prefix, String baseName, String suffix) {
-        String combined = prefix == null ? baseName : prefix + baseName;
-        return withSuffix(combined, suffix);
+        if (baseName == null || baseName.isEmpty()) {
+            return baseName;
+        }
+
+        String withPrefix = (prefix == null ? "" : prefix) + baseName;
+        return withOneSuffix(withPrefix, suffix);
     }
 }

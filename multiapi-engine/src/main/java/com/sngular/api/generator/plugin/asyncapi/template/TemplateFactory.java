@@ -20,7 +20,7 @@ import com.sngular.api.generator.plugin.asyncapi.parameter.SpecFile;
 import com.sngular.api.generator.plugin.asyncapi.util.BindingTypeEnum;
 import com.sngular.api.generator.plugin.common.template.CommonTemplateFactory;
 
-import main.java.com.sngular.api.generator.plugin.asyncapi.util.NameUtils;
+import com.sngular.api.generator.plugin.asyncapi.util.NameUtils;
 
 import org.apache.commons.lang3.StringUtils;
 

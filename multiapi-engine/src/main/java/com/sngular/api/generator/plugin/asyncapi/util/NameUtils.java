@@ -1,4 +1,4 @@
-package main.java.com.sngular.api.generator.plugin.asyncapi.util;
+package com.sngular.api.generator.plugin.asyncapi.util;
 
 public final class NameUtils {
 
@@ -13,6 +13,9 @@ public final class NameUtils {
      */
     public static String withSuffix(String baseName, String suffix) {
         if (baseName == null || baseName.isEmpty() || suffix == null || suffix.isEmpty()) {
+            return baseName;
+        }
+        if (baseName.endsWith(suffix)) {
             return baseName;
         }
         return baseName + suffix;

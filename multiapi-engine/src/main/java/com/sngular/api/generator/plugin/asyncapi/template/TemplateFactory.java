@@ -68,7 +68,6 @@ public class TemplateFactory extends CommonTemplateFactory {
     super(enableOverwrite, targetFolder, processedGeneratedSourcesFolder, baseDir, new ClasspathTemplateLoader());
   }
 
-  @Override
   public final void fillTemplates() throws IOException {
     addToRoot("publishMethods", publishMethods);
     addToRoot("subscribeMethods", subscribeMethods);

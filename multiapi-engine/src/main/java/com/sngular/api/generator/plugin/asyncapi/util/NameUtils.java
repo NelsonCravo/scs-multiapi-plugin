@@ -19,19 +19,6 @@ public final class NameUtils {
     }
 
     /**
-     * Adds a suffix when it is not already present (idempotent helper).
-     */
-    public static String withOneSuffix(String baseName, String suffix) {
-        if (baseName == null || baseName.isEmpty() || suffix == null || suffix.isEmpty()) {
-            return baseName;
-        }
-        if (baseName.endsWith(suffix)) {
-            return baseName;
-        }
-        return baseName + suffix;
-    }
-
-    /**
      * A variant that adds a prefix + suffix, avoiding duplication.
      * @param prefix
      * @param baseName
@@ -44,6 +31,6 @@ public final class NameUtils {
         }
 
         String withPrefix = (prefix == null ? "" : prefix) + baseName;
-        return withOneSuffix(withPrefix, suffix);
+        return withSuffix(withPrefix, suffix);
     }
 }

@@ -332,7 +332,7 @@ public class AsyncApi3Handler extends BaseAsyncApiHandler {
     final String schemaFormat = selectSchemaPipeline(rawSchemaFormat);
     final String schemaVersion = StringUtils.defaultIfBlank(ApiTool.getNodeAsString(messageWithTraits, SCHEMA_VERSION), ApiTool.getNodeAsString(payloadInfo.getValue(), SCHEMA_VERSION));
     final boolean cloudEvent = isCloudEventPayload(payloadInfo.getValue());
-    final String suffixedNamespace = appendSuffixToNamespace(payloadInfo.getKey(), operationObject.getModelNameSuffix());
+    final String suffixedNamespace = appendModelSuffix(payloadInfo.getKey(), operationObject.getModelNameSuffix());
     final String versionedNamespace = applySchemaVersionNamespace(suffixedNamespace, schemaVersion);
     return ProcessMethodResult
                .builder()

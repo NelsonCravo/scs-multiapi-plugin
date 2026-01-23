@@ -17,8 +17,8 @@ class NameUtilsTest {
   }
 
   @Test
-  void withOneSuffixShouldAvoidDuplicatingExistingSuffix() {
-    assertThat(NameUtils.withOneSuffix("OrderSupplier", "Supplier")).isEqualTo("OrderSupplier");
+  void withSuffixShouldAvoidDuplicatingExistingSuffix() {
+    assertThat(NameUtils.withSuffix("OrderSupplier", "Supplier")).isEqualTo("OrderSupplier");
   }
 
   @Test

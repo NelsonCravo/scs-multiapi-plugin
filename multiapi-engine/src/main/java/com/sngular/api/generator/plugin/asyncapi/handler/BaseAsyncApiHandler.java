@@ -266,6 +266,23 @@ public abstract class BaseAsyncApiHandler {
     return NameUtils.withOneSuffix(namespace, suffix);
   }
 
+  /**
+   * Appends the configured model suffix even when the base name already ends with it.
+   * Used to avoid losing an explicit suffix in schema references while keeping class suffix
+   * handling idempotent elsewhere.
+   */
+  protected String appendModelSuffix(final String namespace, final String modelSuffix) {
+    if (StringUtils.isBlank(modelSuffix) || StringUtils.isBlank(namespace)) {
+      return namespace;
+    }
+    final int lastDot = namespace.lastIndexOf(PACKAGE_SEPARATOR_STR);
+    if (lastDot >= 0 && lastDot < namespace.length() - 1) {
+      final String base = namespace.substring(lastDot + 1);
+      return namespace.substring(0, lastDot + 1) + NameUtils.withSuffix(base, modelSuffix);
+    }
+    return NameUtils.withSuffix(namespace, modelSuffix);
+  }
+
   protected abstract Pair<String, JsonNode> processPayload(
       final OperationParameterObject operationObject, final String messageName, final JsonNode payload, final FileLocation ymlParent)
       throws IOException;

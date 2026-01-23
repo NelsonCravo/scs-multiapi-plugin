@@ -417,6 +417,9 @@ public class TemplateFactory extends CommonTemplateFactory {
       final String keyClassFullName,
       final String keyClassName
                                        ) throws IOException {
+    if (modelOnly) {
+      return;
+    }
     final var filePath = processPath(getPath(modelPackage));
     addToRoot(Map.of(WRAPPER_PACKAGE, modelPackage,
                      CLASS_NAMESPACE, classFullName,

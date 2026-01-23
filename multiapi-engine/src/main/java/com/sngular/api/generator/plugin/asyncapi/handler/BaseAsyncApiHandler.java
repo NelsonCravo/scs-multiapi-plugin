@@ -346,6 +346,10 @@ public abstract class BaseAsyncApiHandler {
 
   protected void setUpTemplate(final SpecFile fileParameter, final Integer springBootVersion) {
     templateFactory.setModelOnly(fileParameter.isModelOnly());
+    if (fileParameter.isModelOnly()) {
+      processJavaEEPackage(springBootVersion);
+      return;
+    }
     processPackage(fileParameter);
     templateFactory.processFilePaths(fileParameter, DEFAULT_ASYNCAPI_API_PACKAGE);
     processClassNames(fileParameter);

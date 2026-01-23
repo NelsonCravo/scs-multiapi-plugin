@@ -11,6 +11,9 @@ import org.gradle.api.Project;
 import org.gradle.testfixtures.ProjectBuilder;
 import org.junit.jupiter.api.Test;
 
+import com.sngular.api.generator.plugin.OpenApiTask;
+import com.sngular.api.generator.plugin.AsyncApiTask;
+
 class ScsMultiApiTest {
 
   @Test
@@ -18,7 +21,7 @@ class ScsMultiApiTest {
     Project project = ProjectBuilder.builder().build();
     project.getPluginManager().apply("com.sngular.scs-multiapi-gradle-plugin");
 
-    assertTrue("com.sngular.api.generator.plugin.OpenApiTask".equals(project.getTasks().getByName("openApiTask").getClass().getName()));
+    assertTrue(OpenApiTask.class.isAssignableFrom(project.getTasks().getByName("openApiTask").getClass()));
   }
 
   @Test
@@ -26,7 +29,7 @@ class ScsMultiApiTest {
     Project project = ProjectBuilder.builder().build();
     project.getPluginManager().apply("com.sngular.scs-multiapi-gradle-plugin");
 
-    assertTrue("com.sngular.api.generator.plugin.AsyncApiTask".equals(project.getTasks().getByName("asyncApiTask").getClass().getName()));
+    assertTrue(AsyncApiTask.class.isAssignableFrom(project.getTasks().getByName("asyncApiTask").getClass()));
   }
 
 }

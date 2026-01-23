@@ -57,7 +57,7 @@ public class AsyncApi3Handler extends BaseAsyncApiHandler {
   }
 
   @Override
-  public void processFileSpec(final List<com.sngular.api.generator.plugin.asyncapi.parameter.SpecFile> specsListFile) {
+  public void processFileSpec(final List<SpecFile> specsListFile) {
     processedOperationIds.clear();
     templateFactory.setNotGenerateTemplate();
     for (final SpecFile fileParameter : specsListFile) {
@@ -307,7 +307,8 @@ public class AsyncApi3Handler extends BaseAsyncApiHandler {
     final String schemaFormat = selectSchemaPipeline(rawSchemaFormat);
     final String schemaVersion = StringUtils.defaultIfBlank(ApiTool.getNodeAsString(messageWithTraits, "schemaVersion"), ApiTool.getNodeAsString(payloadInfo.getValue(), "schemaVersion"));
     final boolean cloudEvent = isCloudEventPayload(payloadInfo.getValue());
-    final String versionedNamespace = applySchemaVersionNamespace(payloadInfo.getKey(), schemaVersion);
+    final String suffixedNamespace = appendSuffixToNamespace(payloadInfo.getKey(), operationObject.getModelNameSuffix());
+    final String versionedNamespace = applySchemaVersionNamespace(suffixedNamespace, schemaVersion);
     return ProcessMethodResult
                .builder()
                .operationId(operationId)

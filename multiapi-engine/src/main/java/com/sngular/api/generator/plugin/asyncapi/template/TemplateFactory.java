@@ -19,6 +19,9 @@ import com.sngular.api.generator.plugin.asyncapi.model.MethodObject;
 import com.sngular.api.generator.plugin.asyncapi.parameter.SpecFile;
 import com.sngular.api.generator.plugin.asyncapi.util.BindingTypeEnum;
 import com.sngular.api.generator.plugin.common.template.CommonTemplateFactory;
+
+import main.java.com.sngular.api.generator.plugin.asyncapi.util.NameUtils;
+
 import org.apache.commons.lang3.StringUtils;
 
 public class TemplateFactory extends CommonTemplateFactory {
@@ -65,30 +68,54 @@ public class TemplateFactory extends CommonTemplateFactory {
     super(enableOverwrite, targetFolder, processedGeneratedSourcesFolder, baseDir, new ClasspathTemplateLoader());
   }
 
+  @Override
   public final void fillTemplates() throws IOException {
     addToRoot("publishMethods", publishMethods);
     addToRoot("subscribeMethods", subscribeMethods);
     addToRoot("streamBridgeMethods", streamBridgeMethods);
 
+    // Ajuste de nomes antes de chamar templates
+    if (supplierClassName != null) {
+      supplierClassName = NameUtils.withSuffix(supplierClassName, "Supplier");
+    }
+    if (subscribeClassName != null) {
+      subscribeClassName = NameUtils.withSuffix(subscribeClassName, "Consumer");
+    }
+    if (streamBridgeClassName != null) {
+      streamBridgeClassName = NameUtils.withSuffix(streamBridgeClassName, "Bridge");
+    }
+
     for (final var method : publishMethods) {
-      fillTemplate(supplierFilePath, supplierClassName, checkTemplate(method.getBindingType(), TemplateIndexConstants.TEMPLATE_API_SUPPLIERS));
+      fillTemplate(
+          supplierFilePath,
+          supplierClassName,
+          checkTemplate(method.getBindingType(), TemplateIndexConstants.TEMPLATE_API_SUPPLIERS));
     }
 
     for (final var method : subscribeMethods) {
-      fillTemplate(subscribeFilePath, subscribeClassName, checkTemplate(method.getBindingType(), TemplateIndexConstants.TEMPLATE_API_CONSUMERS));
+      fillTemplate(
+          subscribeFilePath,
+          subscribeClassName,
+          checkTemplate(method.getBindingType(), TemplateIndexConstants.TEMPLATE_API_CONSUMERS));
     }
 
     for (final var method : streamBridgeMethods) {
-      fillTemplate(streamBridgeFilePath, streamBridgeClassName, checkTemplate(method.getBindingType(), TemplateIndexConstants.TEMPLATE_API_STREAM_BRIDGE));
+      fillTemplate(
+          streamBridgeFilePath,
+          streamBridgeClassName,
+          checkTemplate(method.getBindingType(), TemplateIndexConstants.TEMPLATE_API_STREAM_BRIDGE));
     }
 
     if (schemaRegistryFilePath != null) {
-      fillTemplate(schemaRegistryFilePath, "SchemaRegistryConfig", TemplateIndexConstants.TEMPLATE_SCHEMA_REGISTRY_CONFIG);
+      fillTemplate(
+          schemaRegistryFilePath,
+          "SchemaRegistryConfig",
+          TemplateIndexConstants.TEMPLATE_SCHEMA_REGISTRY_CONFIG);
     }
 
+    // Gera demais templates e interfaces
     generateTemplates();
-
-    this.generateInterfaces();
+    generateInterfaces();
   }
 
   private String checkTemplate(final String bindingType, final String defaultTemplate) {
@@ -98,7 +125,8 @@ public class TemplateFactory extends CommonTemplateFactory {
         templateName = defaultTemplate;
         break;
       case KAFKA:
-        templateName = StringUtils.remove(defaultTemplate, ".ftlh") + TemplateIndexConstants.KAFKA_BINDINGS_FTLH;
+        templateName = StringUtils.remove(defaultTemplate, ".ftlh") 
+                       + TemplateIndexConstants.KAFKA_BINDINGS_FTLH;
         break;
       default:
         throw new NonSupportedBindingException(bindingType);
@@ -113,12 +141,14 @@ public class TemplateFactory extends CommonTemplateFactory {
     for (MethodObject method : allMethods) {
       addToRoot("method", method);
 
+      String interfaceName = NameUtils.withPrefixAndSuffix("I", method.getClassName(), "Detailed");
+
       if (Objects.equals(method.getType(), "publish")) {
-        fillTemplate(supplierFilePath, "I" + method.getClassName(),
-                     checkTemplate(method.getBindingType(), TemplateIndexConstants.TEMPLATE_INTERFACE_SUPPLIERS));
+        fillTemplate(supplierFilePath, interfaceName,
+                    checkTemplate(method.getBindingType(), TemplateIndexConstants.TEMPLATE_INTERFACE_SUPPLIERS));
       } else if (Objects.equals(method.getType(), "subscribe")) {
-        fillTemplate(subscribeFilePath, "I" + method.getClassName(),
-                     checkTemplate(method.getBindingType(), TemplateIndexConstants.TEMPLATE_INTERFACE_CONSUMERS));
+        fillTemplate(subscribeFilePath, interfaceName,
+                    checkTemplate(method.getBindingType(), TemplateIndexConstants.TEMPLATE_INTERFACE_CONSUMERS));
       }
     }
     cleanData();
@@ -344,7 +374,12 @@ public class TemplateFactory extends CommonTemplateFactory {
                      "className", className,
                      "keyNamespace", keyClassFullName,
                      "keyClassName", keyClassName));
-    writeTemplateToFile(TemplateIndexConstants.TEMPLATE_MESSAGE_WRAPPER, filePath, "MessageWrapper");
+
+    String wrapperName = NameUtils.withSuffix(className, "MessageWrapper");
+    writeTemplateToFile(
+        TemplateIndexConstants.TEMPLATE_MESSAGE_WRAPPER,
+        filePath,
+        wrapperName);
   }
 
   public void processFilePaths(final SpecFile fileParameter, final String defaultApiPackage) {

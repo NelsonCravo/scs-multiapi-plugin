@@ -23,6 +23,7 @@ import com.sngular.api.generator.plugin.asyncapi.model.ProcessMethodResult;
 import com.sngular.api.generator.plugin.asyncapi.parameter.OperationParameterObject;
 import com.sngular.api.generator.plugin.asyncapi.parameter.SpecFile;
 import com.sngular.api.generator.plugin.asyncapi.template.TemplateFactory;
+import com.sngular.api.generator.plugin.asyncapi.util.NameUtils;
 import com.sngular.api.generator.plugin.common.files.ClasspathFileLocation;
 import com.sngular.api.generator.plugin.common.files.DirectoryFileLocation;
 import com.sngular.api.generator.plugin.common.files.FileLocation;
@@ -54,6 +55,12 @@ public abstract class BaseAsyncApiHandler {
   protected static final String SUPPLIER_CLASS_NAME = "Producer";
 
   protected static final String STREAM_BRIDGE_CLASS_NAME = "StreamBridgeProducer";
+
+  protected static final String SUPPLIER_SUFFIX = "Supplier";
+
+  protected static final String STREAM_BRIDGE_SUFFIX = "StreamBridge";
+
+  protected static final String CONSUMER_SUFFIX = "Consumer";
 
   protected static final String SUBSCRIBE = "subscribe";
 
@@ -205,7 +212,7 @@ public abstract class BaseAsyncApiHandler {
     }
   }
 
-  public abstract void processFileSpec(final List<SpecFile> specsListFile);
+  public abstract <T extends SpecFile> void processFileSpec(final List<T> specsListFile);
 
   protected abstract Map<String, JsonNode> getAllSchemas(final FileLocation ymlParent, final JsonNode node);
 
@@ -245,6 +252,18 @@ public abstract class BaseAsyncApiHandler {
     }
     final String sanitized = schemaVersion.replaceAll("[^A-Za-z0-9]", "_");
     return namespace + "_v" + sanitized;
+  }
+
+  protected String appendSuffixToNamespace(final String namespace, final String suffix) {
+    if (StringUtils.isBlank(suffix) || StringUtils.isBlank(namespace)) {
+      return namespace;
+    }
+    final int lastDot = namespace.lastIndexOf(PACKAGE_SEPARATOR_STR);
+    if (lastDot >= 0 && lastDot < namespace.length() - 1) {
+      final String base = namespace.substring(lastDot + 1);
+      return namespace.substring(0, lastDot + 1) + NameUtils.withOneSuffix(base, suffix);
+    }
+    return NameUtils.withOneSuffix(namespace, suffix);
   }
 
   protected abstract Pair<String, JsonNode> processPayload(

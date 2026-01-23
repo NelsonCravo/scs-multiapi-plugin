@@ -27,7 +27,6 @@ import com.sngular.api.generator.plugin.asyncapi.model.ProcessMethodResult;
 import com.sngular.api.generator.plugin.asyncapi.parameter.OperationParameterObject;
 import com.sngular.api.generator.plugin.asyncapi.parameter.SpecFile;
 import com.sngular.api.generator.plugin.asyncapi.util.AsyncApiUtil;
-import com.sngular.api.generator.plugin.asyncapi.util.NameUtils;
 import com.sngular.api.generator.plugin.asyncapi.util.BindingTypeEnum;
 import com.sngular.api.generator.plugin.asyncapi.util.FactoryTypeEnum;
 import com.sngular.api.generator.plugin.asyncapi.util.ReferenceProcessor;
@@ -58,8 +57,10 @@ public class AsyncApi2Handler extends BaseAsyncApiHandler {
     super(springBootVersion, overwriteModel, targetFolder, processedGeneratedSourcesFolder, groupId, baseDir);
   }
 
+  @SuppressWarnings("unchecked")
   @Override
-  public void processFileSpec(final List<SpecFile> specsListFile) {
+  public void processFileSpec(final List specs) {
+    List<SpecFile> specsListFile = (List<SpecFile>) specs;
     processedOperationIds.clear();
     templateFactory.setNotGenerateTemplate();
     for (final SpecFile fileParameter : specsListFile) {
@@ -158,7 +159,8 @@ public class AsyncApi2Handler extends BaseAsyncApiHandler {
       result.setReplyTo(channelName + REPLY_SUFFIX);
     }
     fillTemplateFactory(operationId, result, totalSchemas, operationObject);
-    templateFactory.addSupplierMethod(result.getOperationId(), result.getNamespace(), result.getChannelName(), result.getBindings(), result.getBindingType(), null,
+    final String supplierNamespace = appendSuffixToNamespace(result.getNamespace(), SUPPLIER_SUFFIX);
+    templateFactory.addSupplierMethod(result.getOperationId(), supplierNamespace, result.getChannelName(), result.getBindings(), result.getBindingType(), null,
                                       result.getServerBindings(), result.getChannelBindings(), result.getOperationBindings(), result.getMessageBindings(),
                                       result.getSecurityRequirements(), result.getSecuritySchemes(), result.getChannelParameters(),
                                       result.getCorrelationId(), result.getCausationId(), result.getReplyTo(), result.getBindingVersion(), result.getMqttQos(),
@@ -181,12 +183,12 @@ public class AsyncApi2Handler extends BaseAsyncApiHandler {
     final String channelParameters = stringify(ApiTool.getNode(channelNode, PARAMETERS));
     final ProcessMethodResult result = processMethod(operationId, channel, operationObject, ymlParent, totalSchemas, channelBindings, operationBindings, serverBindings,
                                                      security.getLeft(), security.getRight(), channelParameters);
-    final String regex = "[a-zA-Z0-9._/#{}:+\\-]*";
     if (!channelName.matches(CHANNEL_REGEX)) {
       throw new ChannelNameException(channelName);
     }
     fillTemplateFactory(operationId, result, totalSchemas, operationObject);
-    templateFactory.addStreamBridgeMethod(result.getOperationId(), result.getNamespace(), channelName, result.getBindings(), result.getBindingType(), null,
+    final String streamBridgeNamespace = appendSuffixToNamespace(result.getNamespace(), STREAM_BRIDGE_SUFFIX);
+    templateFactory.addStreamBridgeMethod(result.getOperationId(), streamBridgeNamespace, channelName, result.getBindings(), result.getBindingType(), null,
                                           result.getServerBindings(), result.getChannelBindings(), result.getOperationBindings(), result.getMessageBindings(),
                                           result.getSecurityRequirements(), result.getSecuritySchemes(), result.getChannelParameters(),
                                           result.getCorrelationId(), result.getCausationId(), result.getReplyTo(), result.getBindingVersion(), result.getMqttQos(),
@@ -213,7 +215,8 @@ public class AsyncApi2Handler extends BaseAsyncApiHandler {
       result.setReplyTo(channelName + REPLY_SUFFIX);
     }
     fillTemplateFactory(operationId, result, totalSchemas, operationObject);
-    templateFactory.addSubscribeMethod(result.getOperationId(), result.getNamespace(), result.getChannelName(), result.getBindings(), result.getBindingType(), null,
+    final String consumerNamespace = appendSuffixToNamespace(result.getNamespace(), CONSUMER_SUFFIX);
+    templateFactory.addSubscribeMethod(result.getOperationId(), consumerNamespace, result.getChannelName(), result.getBindings(), result.getBindingType(), null,
                                        result.getServerBindings(), result.getChannelBindings(), result.getOperationBindings(), result.getMessageBindings(),
                                        result.getSecurityRequirements(), result.getSecuritySchemes(), result.getChannelParameters(),
                                        result.getCorrelationId(), result.getCausationId(), result.getReplyTo(), result.getBindingVersion(), result.getMqttQos(),
@@ -497,18 +500,6 @@ public class AsyncApi2Handler extends BaseAsyncApiHandler {
     if (mqttBindings.has(RETAIN)) {
       bindingsResult.mqttRetain(ApiTool.getNode(mqttBindings, RETAIN).asBoolean());
     }
-  }
-
-  private String appendSuffixToNamespace(final String namespace, final String suffix) {
-    if (StringUtils.isBlank(suffix) || StringUtils.isBlank(namespace)) {
-      return namespace;
-    }
-    final int lastDot = namespace.lastIndexOf(PACKAGE_SEPARATOR_STR);
-    if (lastDot >= 0 && lastDot < namespace.length() - 1) {
-      final String base = namespace.substring(lastDot + 1);
-      return namespace.substring(0, lastDot + 1) + NameUtils.withSuffix(base, suffix);
-    }
-    return NameUtils.withSuffix(namespace, suffix);
   }
 
   @Override

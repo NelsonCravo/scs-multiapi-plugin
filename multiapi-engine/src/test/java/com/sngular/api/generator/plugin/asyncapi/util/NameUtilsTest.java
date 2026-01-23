@@ -7,13 +7,18 @@ import org.junit.jupiter.api.Test;
 class NameUtilsTest {
 
   @Test
-  void withSuffixShouldAvoidDuplicatingExistingSuffix() {
-    assertThat(NameUtils.withSuffix("OrderSupplier", "Supplier")).isEqualTo("OrderSupplier");
+  void withSuffixShouldAppendEvenWhenAlreadyPresent() {
+    assertThat(NameUtils.withSuffix("OrderSupplier", "Supplier")).isEqualTo("OrderSupplierSupplier");
   }
 
   @Test
   void withSuffixShouldAppendWhenMissing() {
     assertThat(NameUtils.withSuffix("Order", "Supplier")).isEqualTo("OrderSupplier");
+  }
+
+  @Test
+  void withOneSuffixShouldAvoidDuplicatingExistingSuffix() {
+    assertThat(NameUtils.withOneSuffix("OrderSupplier", "Supplier")).isEqualTo("OrderSupplier");
   }
 
   @Test

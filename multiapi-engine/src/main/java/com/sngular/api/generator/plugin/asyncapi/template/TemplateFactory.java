@@ -98,7 +98,7 @@ public class TemplateFactory extends CommonTemplateFactory {
     applyFinalClassNaming();
 
     for (final var method : publishMethods) {
-      String finalSupplierClassName = NameUtils.withSuffix(method.getClassName(), SUPPLIER_SUFFIX);
+      String finalSupplierClassName = NameUtils.withOneSuffix(method.getClassName(), SUPPLIER_SUFFIX);
       fillTemplate(
           supplierFilePath,
           finalSupplierClassName,
@@ -106,7 +106,7 @@ public class TemplateFactory extends CommonTemplateFactory {
     }
 
     for (final var method : subscribeMethods) {
-      String finalSubscribeClassName = NameUtils.withSuffix(method.getClassName(), CONSUMER_SUFFIX);
+      String finalSubscribeClassName = NameUtils.withOneSuffix(method.getClassName(), CONSUMER_SUFFIX);
       fillTemplate(
           subscribeFilePath,
           finalSubscribeClassName,
@@ -114,7 +114,7 @@ public class TemplateFactory extends CommonTemplateFactory {
     }
 
     for (final var method : streamBridgeMethods) {
-      String finalStreamBridgeClassName = NameUtils.withSuffix(method.getClassName(), BRIDGE_SUFFIX);
+      String finalStreamBridgeClassName = NameUtils.withOneSuffix(method.getClassName(), BRIDGE_SUFFIX);
       fillTemplate(
           streamBridgeFilePath,
           finalStreamBridgeClassName,
@@ -410,7 +410,7 @@ public class TemplateFactory extends CommonTemplateFactory {
                      KEY_NAMESPACE, keyClassFullName,
                      KEY_CLASS_NAME, keyClassName));
 
-    String wrapperName = NameUtils.withSuffix(className, WRAPPER_SUFFIX);
+    String wrapperName = NameUtils.withOneSuffix(className, WRAPPER_SUFFIX);
     writeTemplateToFile(
         TemplateIndexConstants.TEMPLATE_MESSAGE_WRAPPER,
         filePath,

@@ -15,9 +15,6 @@ public final class NameUtils {
         if (baseName == null || baseName.isEmpty() || suffix == null || suffix.isEmpty()) {
             return baseName;
         }
-        if (baseName.endsWith(suffix)) {
-            return baseName;
-        }
         return baseName + suffix;
     }
 
@@ -25,7 +22,13 @@ public final class NameUtils {
      * Adds a suffix when it is not already present (idempotent helper).
      */
     public static String withOneSuffix(String baseName, String suffix) {
-        return withSuffix(baseName, suffix);
+        if (baseName == null || baseName.isEmpty() || suffix == null || suffix.isEmpty()) {
+            return baseName;
+        }
+        if (baseName.endsWith(suffix)) {
+            return baseName;
+        }
+        return baseName + suffix;
     }
 
     /**
@@ -41,6 +44,6 @@ public final class NameUtils {
         }
 
         String withPrefix = (prefix == null ? "" : prefix) + baseName;
-        return withSuffix(withPrefix, suffix);
+        return withOneSuffix(withPrefix, suffix);
     }
 }

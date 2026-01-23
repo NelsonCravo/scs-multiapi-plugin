@@ -27,7 +27,6 @@ import com.sngular.api.generator.plugin.asyncapi.model.ProcessMethodResult;
 import com.sngular.api.generator.plugin.asyncapi.parameter.OperationParameterObject;
 import com.sngular.api.generator.plugin.asyncapi.parameter.SpecFile;
 import com.sngular.api.generator.plugin.asyncapi.util.AsyncApiUtil;
-import com.sngular.api.generator.plugin.asyncapi.util.NameUtils;
 import com.sngular.api.generator.plugin.asyncapi.util.BindingTypeEnum;
 import com.sngular.api.generator.plugin.asyncapi.util.FactoryTypeEnum;
 import com.sngular.api.generator.plugin.asyncapi.util.ReferenceProcessor;
@@ -50,9 +49,6 @@ public class AsyncApi3Handler extends BaseAsyncApiHandler {
   private static final String OPERATIONS = "operations";
   private static final String SEND = "send";
   private static final String RECEIVE = "receive";
-  private static final String SUPPLIER_SUFFIX = "Supplier";
-  private static final String STREAM_BRIDGE_SUFFIX = "StreamBridge";
-  private static final String CONSUMER_SUFFIX = "Consumer";
   private static final String CHANNEL = "channel";
   private static final String CHANNEL_REF_PREFIX = "#/channels/";
   private static final String AVRO_NAMESPACE = "namespace";
@@ -77,8 +73,10 @@ public class AsyncApi3Handler extends BaseAsyncApiHandler {
     super(springBootVersion, overwriteModel, targetFolder, processedGeneratedSourcesFolder, groupId, baseDir);
   }
 
+  @SuppressWarnings("unchecked")
   @Override
-  public void processFileSpec(final List<SpecFile> specsListFile) {
+  public void processFileSpec(final List specs) {
+    List<SpecFile> specsListFile = (List<SpecFile>) specs;
     processedOperationIds.clear();
     templateFactory.setNotGenerateTemplate();
     for (final SpecFile fileParameter : specsListFile) {
@@ -536,18 +534,6 @@ public class AsyncApi3Handler extends BaseAsyncApiHandler {
     if (mqttBindings.has(RETAIN)) {
       bindingsResult.mqttRetain(ApiTool.getNode(mqttBindings, RETAIN).asBoolean());
     }
-  }
-
-  private String appendSuffixToNamespace(final String namespace, final String suffix) {
-    if (StringUtils.isBlank(suffix) || StringUtils.isBlank(namespace)) {
-      return namespace;
-    }
-    final int lastDot = namespace.lastIndexOf(PACKAGE_SEPARATOR_STR);
-    if (lastDot >= 0 && lastDot < namespace.length() - 1) {
-      final String base = namespace.substring(lastDot + 1);
-      return namespace.substring(0, lastDot + 1) + NameUtils.withSuffix(base, suffix);
-    }
-    return NameUtils.withSuffix(namespace, suffix);
   }
 
   private void processWebsocketBindings(final ProcessBindingsResult.ProcessBindingsResultBuilder bindingsResult, final JsonNode wsBindings) {

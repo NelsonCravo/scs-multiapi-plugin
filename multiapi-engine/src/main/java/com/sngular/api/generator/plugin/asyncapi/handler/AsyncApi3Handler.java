@@ -241,8 +241,8 @@ public class AsyncApi3Handler extends BaseAsyncApiHandler {
       final String operationId,
       final ProcessMethodResult processedMethod, final Map<String, JsonNode> totalSchemas, final OperationParameterObject operationObject)
       throws IOException {
-    final String classFullName = processedMethod.getNamespace();
-    final String keyClassFullName = processedMethod.getBindings();
+    final String classFullName = appendSuffixToNamespace(processedMethod.getNamespace(), operationObject.getModelNameSuffix());
+    final String keyClassFullName = appendSuffixToNamespace(processedMethod.getBindings(), operationObject.getModelNameSuffix());
     final String modelPackage = classFullName.substring(0, classFullName.lastIndexOf("."));
     final String parentPackage = modelPackage.substring(modelPackage.lastIndexOf(".") + 1);
     String className = classFullName.substring(classFullName.lastIndexOf(".") + 1);

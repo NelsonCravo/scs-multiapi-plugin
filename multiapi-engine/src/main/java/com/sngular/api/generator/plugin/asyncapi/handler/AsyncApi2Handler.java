@@ -46,6 +46,8 @@ public class AsyncApi2Handler extends BaseAsyncApiHandler {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(AsyncApi2Handler.class);
 
+  private static final String MESSAGE_ID = "messageId";
+
   public AsyncApi2Handler(
       final Integer springBootVersion,
       boolean overwriteModel,
@@ -148,12 +150,12 @@ public class AsyncApi2Handler extends BaseAsyncApiHandler {
     final String operationBindings = stringify(ApiTool.getNode(channel, BINDINGS));
     final String serverBindings = extractServerBindings(root, channel);
     final var security = extractSecurity(root, channel);
-    final String channelParameters = stringify(ApiTool.getNode(channelNode, "parameters"));
+    final String channelParameters = stringify(ApiTool.getNode(channelNode, PARAMETERS));
     final ProcessMethodResult result = processMethod(operationId, channel, operationObject, ymlParent, totalSchemas, channelBindings, operationBindings, serverBindings,
                                                      security.getLeft(), security.getRight(), channelParameters);
     result.setChannelName(channelName);
     if (StringUtils.isBlank(result.getReplyTo()) && StringUtils.isNotBlank(channelName)) {
-      result.setReplyTo(channelName + "-reply");
+      result.setReplyTo(channelName + REPLY_SUFFIX);
     }
     fillTemplateFactory(operationId, result, totalSchemas, operationObject);
     templateFactory.addSupplierMethod(result.getOperationId(), result.getNamespace(), result.getChannelName(), result.getBindings(), result.getBindingType(), null,
@@ -176,11 +178,11 @@ public class AsyncApi2Handler extends BaseAsyncApiHandler {
     final String operationBindings = stringify(ApiTool.getNode(channel, BINDINGS));
     final String serverBindings = extractServerBindings(root, channel);
     final var security = extractSecurity(root, channel);
-    final String channelParameters = stringify(ApiTool.getNode(channelNode, "parameters"));
+    final String channelParameters = stringify(ApiTool.getNode(channelNode, PARAMETERS));
     final ProcessMethodResult result = processMethod(operationId, channel, operationObject, ymlParent, totalSchemas, channelBindings, operationBindings, serverBindings,
                                                      security.getLeft(), security.getRight(), channelParameters);
     final String regex = "[a-zA-Z0-9._/#{}:+\\-]*";
-    if (!channelName.matches(regex)) {
+    if (!channelName.matches(CHANNEL_REGEX)) {
       throw new ChannelNameException(channelName);
     }
     fillTemplateFactory(operationId, result, totalSchemas, operationObject);
@@ -203,12 +205,12 @@ public class AsyncApi2Handler extends BaseAsyncApiHandler {
     final String operationBindings = stringify(ApiTool.getNode(channel, BINDINGS));
     final String serverBindings = extractServerBindings(root, channel);
     final var security = extractSecurity(root, channel);
-    final String channelParameters = stringify(ApiTool.getNode(channelNode, "parameters"));
+    final String channelParameters = stringify(ApiTool.getNode(channelNode, PARAMETERS));
     final ProcessMethodResult result = processMethod(operationId, channel, operationObject, ymlParent, totalSchemas, channelBindings, operationBindings, serverBindings,
                                                      security.getLeft(), security.getRight(), channelParameters);
     result.setChannelName(channelName);
     if (StringUtils.isBlank(result.getReplyTo()) && StringUtils.isNotBlank(channelName)) {
-      result.setReplyTo(channelName + "-reply");
+      result.setReplyTo(channelName + REPLY_SUFFIX);
     }
     fillTemplateFactory(operationId, result, totalSchemas, operationObject);
     templateFactory.addSubscribeMethod(result.getOperationId(), result.getNamespace(), result.getChannelName(), result.getBindings(), result.getBindingType(), null,
@@ -279,9 +281,9 @@ public class AsyncApi2Handler extends BaseAsyncApiHandler {
     final String replyTo = ApiTool.getNodeAsString(messageWithTraits, "replyTo");
     final String causationId = ApiTool.getNodeAsString(messageWithTraits, "causationId");
     final var kafkaSecurity = deriveKafkaSecurity(processBindingsResult.getSecuritySchemes());
-    final String rawSchemaFormat = StringUtils.defaultIfBlank(ApiTool.getNodeAsString(messageWithTraits, "schemaFormat"), ApiTool.getNodeAsString(payloadInfo.getValue(), "schemaFormat"));
+    final String rawSchemaFormat = StringUtils.defaultIfBlank(ApiTool.getNodeAsString(messageWithTraits, SCHEMA_FORMAT), ApiTool.getNodeAsString(payloadInfo.getValue(), SCHEMA_FORMAT));
     final String schemaFormat = selectSchemaPipeline(rawSchemaFormat);
-    final String schemaVersion = StringUtils.defaultIfBlank(ApiTool.getNodeAsString(messageWithTraits, "schemaVersion"), ApiTool.getNodeAsString(payloadInfo.getValue(), "schemaVersion"));
+    final String schemaVersion = StringUtils.defaultIfBlank(ApiTool.getNodeAsString(messageWithTraits, SCHEMA_VERSION), ApiTool.getNodeAsString(payloadInfo.getValue(), SCHEMA_VERSION));
     final boolean cloudEvent = isCloudEventPayload(payloadInfo.getValue());
     final String suffixedNamespace = appendSuffixToNamespace(payloadInfo.getKey(), operationObject.getModelNameSuffix());
     final String versionedNamespace = applySchemaVersionNamespace(suffixedNamespace, schemaVersion);
@@ -322,10 +324,10 @@ public class AsyncApi2Handler extends BaseAsyncApiHandler {
   }
 
   private boolean isCloudEventPayload(final JsonNode payload) {
-    if (payload == null || !payload.has("properties")) {
+    if (payload == null || !payload.has(PROPERTIES)) {
       return false;
     }
-    final JsonNode props = payload.get("properties");
+    final JsonNode props = payload.get(PROPERTIES);
     return props.has("specversion") && props.has("id");
   }
 
@@ -425,12 +427,12 @@ public class AsyncApi2Handler extends BaseAsyncApiHandler {
       bindingsResult.messageBindings(stringify(bindingsNode));
       if (bindingsNode.has(KAFKA)) {
         processKafkaBindings(bindingsResult, bindingsNode.get(KAFKA), commonSpecFile);
-      } else if (bindingsNode.has("mqtt")) {
-        processMqttBindings(bindingsResult, bindingsNode.get("mqtt"));
-      } else if (bindingsNode.has("ws")) {
-        processWebsocketBindings(bindingsResult, bindingsNode.get("ws"));
-      } else if (bindingsNode.has("websockets")) {
-        processWebsocketBindings(bindingsResult, bindingsNode.get("websockets"));
+      } else if (bindingsNode.has(MQTT)) {
+        processMqttBindings(bindingsResult, bindingsNode.get(MQTT));
+      } else if (bindingsNode.has(WS)) {
+        processWebsocketBindings(bindingsResult, bindingsNode.get(WS));
+      } else if (bindingsNode.has(WEBSOCKETS)) {
+        processWebsocketBindings(bindingsResult, bindingsNode.get(WEBSOCKETS));
       } else {
         bindingsResult.bindingType(BindingTypeEnum.NONBINDING.getValue());
       }
@@ -440,60 +442,60 @@ public class AsyncApi2Handler extends BaseAsyncApiHandler {
   @Override
   protected void processKafkaBindings(final ProcessBindingsResult.ProcessBindingsResultBuilder bindingsResult, final JsonNode kafkaBindings, final CommonSpecFile specFile) {
     bindingsResult.bindingType(BindingTypeEnum.KAFKA.getValue());
-    if (kafkaBindings.has("bindingVersion")) {
-      bindingsResult.bindingVersion(ApiTool.getNodeAsString(kafkaBindings, "bindingVersion"));
-      validateKafkaBindingVersion(ApiTool.getNodeAsString(kafkaBindings, "bindingVersion"));
+    if (kafkaBindings.has(BINDING_VERSION)) {
+      bindingsResult.bindingVersion(ApiTool.getNodeAsString(kafkaBindings, BINDING_VERSION));
+      validateKafkaBindingVersion(ApiTool.getNodeAsString(kafkaBindings, BINDING_VERSION));
     }
-    if (kafkaBindings.has("acks")) {
-      bindingsResult.mqttQos(ApiTool.getNode(kafkaBindings, "acks").asInt());
+    if (kafkaBindings.has(ACKS)) {
+      bindingsResult.mqttQos(ApiTool.getNode(kafkaBindings, ACKS).asInt());
     }
-    if (kafkaBindings.has("partitions")) {
-      bindingsResult.kafkaPartition(extractPartitionId(kafkaBindings.get("partitions")));
-      bindingsResult.kafkaTopicConfiguration(stringify(ApiTool.getNode(kafkaBindings, "partitions")));
+    if (kafkaBindings.has(PARTITIONS)) {
+      bindingsResult.kafkaPartition(extractPartitionId(kafkaBindings.get(PARTITIONS)));
+      bindingsResult.kafkaTopicConfiguration(stringify(ApiTool.getNode(kafkaBindings, PARTITIONS)));
     }
-    if (kafkaBindings.has("headers")) {
-      bindingsResult.kafkaHeaders(stringify(ApiTool.getNode(kafkaBindings, "headers")));
+    if (kafkaBindings.has(HEADERS)) {
+      bindingsResult.kafkaHeaders(stringify(ApiTool.getNode(kafkaBindings, HEADERS)));
     }
-    if (kafkaBindings.has("topicConfiguration")) {
-      bindingsResult.kafkaTopicConfiguration(stringify(ApiTool.getNode(kafkaBindings, "topicConfiguration")));
+    if (kafkaBindings.has(TOPIC_CONFIGURATION)) {
+      bindingsResult.kafkaTopicConfiguration(stringify(ApiTool.getNode(kafkaBindings, TOPIC_CONFIGURATION)));
     }
     if (kafkaBindings.has(KEY)) {
       bindingsResult.bindings(MapperUtil.getSimpleType(ApiTool.getNode(kafkaBindings, KEY), specFile));
     }
-    if (kafkaBindings.has(KEY) && ApiTool.getNode(kafkaBindings, KEY).has("examples")) {
-      bindingsResult.examples(stringify(ApiTool.getNode(ApiTool.getNode(kafkaBindings, KEY), "examples")));
+    if (kafkaBindings.has(KEY) && ApiTool.getNode(kafkaBindings, KEY).has(EXAMPLES)) {
+      bindingsResult.examples(stringify(ApiTool.getNode(ApiTool.getNode(kafkaBindings, KEY), EXAMPLES)));
     }
-    if (kafkaBindings.has("x-keySelector")) {
-      bindingsResult.keySelector(ApiTool.getNodeAsString(kafkaBindings, "x-keySelector"));
+    if (kafkaBindings.has(X_KEY_SELECTOR)) {
+      bindingsResult.keySelector(ApiTool.getNodeAsString(kafkaBindings, X_KEY_SELECTOR));
     }
   }
 
   private void processWebsocketBindings(final ProcessBindingsResult.ProcessBindingsResultBuilder bindingsResult, final JsonNode wsBindings) {
     bindingsResult.bindingType(BindingTypeEnum.NONBINDING.getValue());
-    if (wsBindings.has("bindingVersion")) {
-      bindingsResult.bindingVersion(ApiTool.getNodeAsString(wsBindings, "bindingVersion"));
+    if (wsBindings.has(BINDING_VERSION)) {
+      bindingsResult.bindingVersion(ApiTool.getNodeAsString(wsBindings, BINDING_VERSION));
     }
-    if (wsBindings.has("method")) {
-      bindingsResult.websocketMethod(ApiTool.getNodeAsString(wsBindings, "method"));
+    if (wsBindings.has(METHOD)) {
+      bindingsResult.websocketMethod(ApiTool.getNodeAsString(wsBindings, METHOD));
     }
-    if (wsBindings.has("subprotocol")) {
-      bindingsResult.websocketSubprotocol(ApiTool.getNodeAsString(wsBindings, "subprotocol"));
+    if (wsBindings.has(SUBPROTOCOL)) {
+      bindingsResult.websocketSubprotocol(ApiTool.getNodeAsString(wsBindings, SUBPROTOCOL));
     }
-    if (wsBindings.has("headers")) {
-      bindingsResult.websocketHeaders(stringify(ApiTool.getNode(wsBindings, "headers")));
+    if (wsBindings.has(HEADERS)) {
+      bindingsResult.websocketHeaders(stringify(ApiTool.getNode(wsBindings, HEADERS)));
     }
   }
 
   private void processMqttBindings(final ProcessBindingsResult.ProcessBindingsResultBuilder bindingsResult, final JsonNode mqttBindings) {
     bindingsResult.bindingType(BindingTypeEnum.NONBINDING.getValue());
-    if (mqttBindings.has("bindingVersion")) {
-      bindingsResult.bindingVersion(ApiTool.getNodeAsString(mqttBindings, "bindingVersion"));
+    if (mqttBindings.has(BINDING_VERSION)) {
+      bindingsResult.bindingVersion(ApiTool.getNodeAsString(mqttBindings, BINDING_VERSION));
     }
-    if (mqttBindings.has("qos")) {
-      bindingsResult.mqttQos(ApiTool.getNode(mqttBindings, "qos").asInt());
+    if (mqttBindings.has(QOS)) {
+      bindingsResult.mqttQos(ApiTool.getNode(mqttBindings, QOS).asInt());
     }
-    if (mqttBindings.has("retain")) {
-      bindingsResult.mqttRetain(ApiTool.getNode(mqttBindings, "retain").asBoolean());
+    if (mqttBindings.has(RETAIN)) {
+      bindingsResult.mqttRetain(ApiTool.getNode(mqttBindings, RETAIN).asBoolean());
     }
   }
 
@@ -573,8 +575,8 @@ public class AsyncApi2Handler extends BaseAsyncApiHandler {
 
   private String calculateMessageName(final String messageName, final JsonNode message) {
     final String finalMessageName;
-    if (ApiTool.hasNode(message, "messageId")) {
-      finalMessageName = ApiTool.getNodeAsString(message, "messageId");
+    if (ApiTool.hasNode(message, MESSAGE_ID)) {
+      finalMessageName = ApiTool.getNodeAsString(message, MESSAGE_ID);
     } else if (ApiTool.hasName(message)) {
       finalMessageName = ApiTool.getName(message);
     } else {

@@ -27,18 +27,40 @@ import org.apache.commons.lang3.StringUtils;
 public class TemplateFactory extends CommonTemplateFactory {
 
   private static final String SUBSCRIBE_PACKAGE = "subscribePackage";
-
   private static final String WRAPPER_PACKAGE = "wrapperPackage";
-
   private static final String SUPPLIER_PACKAGE = "supplierPackage";
-
   private static final String STREAM_BRIDGE_PACKAGE = "streamBridgePackage";
-
   private static final String SUPPLIER_ENTITIES_SUFFIX = "supplierEntitiesSuffix";
-
   private static final String STREAM_BRIDGE_ENTITIES_SUFFIX = "streamBridgeEntitiesSuffix";
-
   private static final String SUBSCRIBE_ENTITIES_SUFFIX = "subscribeEntitiesSuffix";
+  private static final String PUBLISH_METHODS = "publishMethods";
+  private static final String SUBSCRIBE_METHODS = "subscribeMethods";
+  private static final String STREAM_BRIDGE_METHODS = "streamBridgeMethods";
+  private static final String CLASS_NAMESPACE = "classNamespace";
+  private static final String CLASS_NAME = "className";
+  private static final String KEY_NAMESPACE = "keyNamespace";
+  private static final String KEY_CLASS_NAME = "keyClassName";
+  private static final String METHOD = "method";
+  private static final String SUBSCRIBE_CLASS_NAME = "subscribeClassName";
+  private static final String SUPPLIER_CLASS_NAME = "supplierClassName";
+  private static final String STREAM_BRIDGE_CLASS_NAME = "streamBridgeClassName";
+  private static final String JAVA_EE_PACKAGE = "javaEEPackage";
+  private static final String KAFKA_KEY_HEADER = "kafkaKeyHeader";
+  private static final String SUPPLIER_SUFFIX = "Supplier";
+  private static final String CONSUMER_SUFFIX = "Consumer";
+  private static final String BRIDGE_SUFFIX = "Bridge";
+  private static final String STREAM_BRIDGE_SUFFIX = "StreamBridge";
+  private static final String WRAPPER_SUFFIX = "MessageWrapper";
+  private static final String SCHEMA_REGISTRY_CLASS_NAME = "SchemaRegistryConfig";
+  private static final String INTERFACE_PREFIX = "I";
+  private static final String INTERFACE_SUFFIX = "Detailed";
+  private static final String PUBLISH = "publish";
+  private static final String SUBSCRIBE = "subscribe";
+  private static final String STREAM_BRIDGE = "streamBridge";
+  private static final String JAKARTA = "jakarta";
+  private static final String JAVAX = "javax";
+  private static final String KEY = "KEY";
+  private static final String MESSAGE_KEY = "MESSAGE_KEY";
 
   private final List<MethodObject> publishMethods = new ArrayList<>();
 
@@ -69,12 +91,14 @@ public class TemplateFactory extends CommonTemplateFactory {
   }
 
   public final void fillTemplates() throws IOException {
-    addToRoot("publishMethods", publishMethods);
-    addToRoot("subscribeMethods", subscribeMethods);
-    addToRoot("streamBridgeMethods", streamBridgeMethods);
+    addToRoot(PUBLISH_METHODS, publishMethods);
+    addToRoot(SUBSCRIBE_METHODS, subscribeMethods);
+    addToRoot(STREAM_BRIDGE_METHODS, streamBridgeMethods);
+
+    applyFinalClassNaming();
 
     for (final var method : publishMethods) {
-      String finalSupplierClassName = NameUtils.withSuffix(method.getClassName(), "Supplier");
+      String finalSupplierClassName = NameUtils.withSuffix(method.getClassName(), SUPPLIER_SUFFIX);
       fillTemplate(
           supplierFilePath,
           finalSupplierClassName,
@@ -82,7 +106,7 @@ public class TemplateFactory extends CommonTemplateFactory {
     }
 
     for (final var method : subscribeMethods) {
-      String finalSubscribeClassName = NameUtils.withSuffix(method.getClassName(), "Consumer");
+      String finalSubscribeClassName = NameUtils.withSuffix(method.getClassName(), CONSUMER_SUFFIX);
       fillTemplate(
           subscribeFilePath,
           finalSubscribeClassName,
@@ -90,7 +114,7 @@ public class TemplateFactory extends CommonTemplateFactory {
     }
 
     for (final var method : streamBridgeMethods) {
-      String finalStreamBridgeClassName = NameUtils.withSuffix(method.getClassName(), "Bridge");
+      String finalStreamBridgeClassName = NameUtils.withSuffix(method.getClassName(), BRIDGE_SUFFIX);
       fillTemplate(
           streamBridgeFilePath,
           finalStreamBridgeClassName,
@@ -100,7 +124,7 @@ public class TemplateFactory extends CommonTemplateFactory {
     if (schemaRegistryFilePath != null) {
       fillTemplate(
           schemaRegistryFilePath,
-          "SchemaRegistryConfig",
+          SCHEMA_REGISTRY_CLASS_NAME,
           TemplateIndexConstants.TEMPLATE_SCHEMA_REGISTRY_CONFIG);
     }
 
@@ -129,19 +153,40 @@ public class TemplateFactory extends CommonTemplateFactory {
     allMethods.addAll(publishMethods);
 
     for (MethodObject method : allMethods) {
-      addToRoot("method", method);
+      addToRoot(METHOD, method);
 
-      String interfaceName = NameUtils.withPrefixAndSuffix("I", method.getClassName(), "Detailed");
+      String prefix = INTERFACE_PREFIX;
+      String suffix = INTERFACE_SUFFIX;
+      String interfaceName = NameUtils.withPrefixAndSuffix(prefix, method.getClassName(), suffix);
 
-      if (Objects.equals(method.getType(), "publish")) {
+      if (PUBLISH.equals(method.getType())) {
         fillTemplate(supplierFilePath, interfaceName,
                     checkTemplate(method.getBindingType(), TemplateIndexConstants.TEMPLATE_INTERFACE_SUPPLIERS));
-      } else if (Objects.equals(method.getType(), "subscribe")) {
+      } else if (SUBSCRIBE.equals(method.getType())) {
         fillTemplate(subscribeFilePath, interfaceName,
                     checkTemplate(method.getBindingType(), TemplateIndexConstants.TEMPLATE_INTERFACE_CONSUMERS));
       }
     }
     cleanData();
+  }
+
+
+  private void applyFinalClassNaming() {
+    for (MethodObject method : publishMethods) {
+      String base = method.getClassName();
+      String finalName = NameUtils.withOneSuffix(base, SUPPLIER_SUFFIX);
+      method.setClassName(finalName);
+    }
+    for (MethodObject method : subscribeMethods) {
+      String base = method.getClassName();
+      String finalName = NameUtils.withOneSuffix(base, CONSUMER_SUFFIX);
+      method.setClassName(finalName);
+    }
+    for (MethodObject method : streamBridgeMethods) {
+      String base = method.getClassName();
+      String finalName = NameUtils.withOneSuffix(base, STREAM_BRIDGE_SUFFIX);
+      method.setClassName(finalName);
+    }
   }
 
   public final void setSubscribePackageName(final String packageName) {
@@ -161,17 +206,17 @@ public class TemplateFactory extends CommonTemplateFactory {
   }
 
   public final void setSubscribeClassName(final String className) {
-    addToRoot("subscribeClassName", className);
+    addToRoot(SUBSCRIBE_CLASS_NAME, className);
     this.subscribeClassName = className;
   }
 
   public final void setSupplierClassName(final String className) {
-    addToRoot("supplierClassName", className);
+    addToRoot(SUPPLIER_CLASS_NAME, className);
     this.supplierClassName = className;
   }
 
   public final void setStreamBridgeClassName(final String className) {
-    addToRoot("streamBridgeClassName", className);
+    addToRoot(STREAM_BRIDGE_CLASS_NAME, className);
     this.streamBridgeClassName = className;
   }
 
@@ -188,7 +233,7 @@ public class TemplateFactory extends CommonTemplateFactory {
                            .operationId(operationId)
                            .classNamespace(classNamespace)
                            .channelName(channelName)
-                           .type("publish")
+                           .type(PUBLISH)
                            .action(action)
                            .keyClassNamespace(bindings)
                             .bindingType(bindingType)
@@ -233,7 +278,7 @@ public class TemplateFactory extends CommonTemplateFactory {
                                 .operationId(operationId)
                                 .channelName(channelName)
                                 .classNamespace(classNamespace)
-                                .type("streamBridge")
+                                .type(STREAM_BRIDGE)
                                 .action(action)
                                 .keyClassNamespace(bindings)
                                 .bindingType(bindingType)
@@ -279,7 +324,7 @@ public class TemplateFactory extends CommonTemplateFactory {
                              .operationId(operationId)
                              .classNamespace(classNamespace)
                              .channelName(channelName)
-                             .type("subscribe")
+                             .type(SUBSCRIBE)
                              .action(action)
                              .keyClassNamespace(bindings)
                              .bindingType(bindingType)
@@ -326,11 +371,11 @@ public class TemplateFactory extends CommonTemplateFactory {
 
   public final void calculateJavaEEPackage(final Integer springBootVersion) {
     if (3 <= springBootVersion) {
-      addToRoot("javaEEPackage", "jakarta");
-      addToRoot("kafkaKeyHeader", "KEY");
+      addToRoot(JAVA_EE_PACKAGE, JAKARTA);
+      addToRoot(KAFKA_KEY_HEADER, KEY);
     } else {
-      addToRoot("javaEEPackage", "javax");
-      addToRoot("kafkaKeyHeader", "MESSAGE_KEY");
+      addToRoot(JAVA_EE_PACKAGE, JAVAX);
+      addToRoot(KAFKA_KEY_HEADER, MESSAGE_KEY);
     }
   }
 
@@ -343,12 +388,12 @@ public class TemplateFactory extends CommonTemplateFactory {
 
   @Override
   protected void clearRoot() {
-    delFromRoot("classNamespace");
-    delFromRoot("className");
-    delFromRoot("keyNamespace");
-    delFromRoot("publishMethods");
-    delFromRoot("subscribeMethods");
-    delFromRoot("streamBridgeMethods");
+    delFromRoot(CLASS_NAMESPACE);
+    delFromRoot(CLASS_NAME);
+    delFromRoot(KEY_NAMESPACE);
+    delFromRoot(PUBLISH_METHODS);
+    delFromRoot(SUBSCRIBE_METHODS);
+    delFromRoot(STREAM_BRIDGE_METHODS);
   }
 
   public final void fillTemplateWrapper(
@@ -360,12 +405,12 @@ public class TemplateFactory extends CommonTemplateFactory {
                                        ) throws IOException {
     final var filePath = processPath(getPath(modelPackage));
     addToRoot(Map.of(WRAPPER_PACKAGE, modelPackage,
-                     "classNamespace", classFullName,
-                     "className", className,
-                     "keyNamespace", keyClassFullName,
-                     "keyClassName", keyClassName));
+                     CLASS_NAMESPACE, classFullName,
+                     CLASS_NAME, className,
+                     KEY_NAMESPACE, keyClassFullName,
+                     KEY_CLASS_NAME, keyClassName));
 
-    String wrapperName = NameUtils.withSuffix(className, "MessageWrapper");
+    String wrapperName = NameUtils.withSuffix(className, WRAPPER_SUFFIX);
     writeTemplateToFile(
         TemplateIndexConstants.TEMPLATE_MESSAGE_WRAPPER,
         filePath,

@@ -22,6 +22,13 @@ public final class NameUtils {
     }
 
     /**
+     * Adds a suffix when it is not already present (idempotent helper).
+     */
+    public static String withOneSuffix(String baseName, String suffix) {
+        return withSuffix(baseName, suffix);
+    }
+
+    /**
      * A variant that adds a prefix + suffix, avoiding duplication.
      * @param prefix
      * @param baseName

@@ -49,6 +49,68 @@ public final class ModelBuilder {
 
   private static final String ADDITIONAL_PROPERTIES = "additionalProperties";
 
+  private static final String INLINE_PREFIX = "Inline";
+
+  private static final String X_CLASS_NAME = "x-class-name";
+
+  private static final String TITLE = "title";
+
+  private static final String ENUM = "enum";
+
+  private static final String ITEMS = "items";
+
+  private static final String PATTERN = "pattern";
+
+  private static final String MAX_ITEMS = "maxItems";
+
+  private static final String MIN_ITEMS = "minItems";
+
+  private static final String MAX_LENGTH = "maxLength";
+
+  private static final String MIN_LENGTH = "minLength";
+
+  private static final String UNIQUE_ITEMS = "uniqueItems";
+
+  private static final String EXCLUSIVE_MAXIMUM = "exclusiveMaximum";
+
+  private static final String EXCLUSIVE_MINIMUM = "exclusiveMinimum";
+
+  private static final String MULTIPLE_OF = "multipleOf";
+
+  private static final String MAXIMUM = "maximum";
+
+  private static final String MINIMUM = "minimum";
+
+  private static final String MIN_PROPERTIES = "minProperties";
+
+  private static final String MAX_PROPERTIES = "maxProperties";
+
+  private static final String SIZE_RESTRICTION = "Size";
+
+  private static final String PATTERN_RESTRICTION = "Pattern";
+
+  private static final String MINIMUM_RESTRICTION = "Minimum";
+
+  private static final String MAXIMUM_RESTRICTION = "Maximum";
+
+  private static final String MULTIPLE_OF_RESTRICTION = "MultipleOf";
+
+  private static final String MIN_ITEMS_RESTRICTION = "MinItems";
+
+  private static final String MAX_ITEMS_RESTRICTION = "MaxItems";
+
+  private static final String UNIQUE_ITEMS_RESTRICTION = "UniqueItems";
+
+  private static final String FORMAT_RESTRICTION = "Format";
+
+  private static final String TMP_TEMPLATES_FOLDER = "tmp-templates";
+
+  private static final String MISSING_RESTRICTIONS_LOG = "missing-restrictions.log";
+
+  private static final String EMPTY_LITERAL = "EMPTY";
+
+  private static final String NON_ALPHANUMERIC = "[^A-Za-z0-9]";
+
   private static final Map<String, SchemaObject> cachedSchemas = new HashMap<>();
 
   private ModelBuilder() {
@@ -70,7 +132,7 @@ public final class ModelBuilder {
     antiLoopList.add(pascalCaseClassName);
     final var schemaBuilder = SchemaObject.builder()
                                           .schemaName(pascalCaseClassName);
-    final var calculatedInlinePrefix = MapperUtil.calculatePrefixName("Inline", specFile);
+    final var calculatedInlinePrefix = MapperUtil.calculatePrefixName(INLINE_PREFIX, specFile);
     schemaBuilder.className(pascalCaseClassName);
 
     if (!ApiTool.isEnum(model)) {
@@ -106,11 +168,11 @@ public final class ModelBuilder {
   }
 
   private static String getAlias(final JsonNode model) {
-    final String xClassName = ApiTool.getNodeAsString(model, "x-class-name");
+    final String xClassName = ApiTool.getNodeAsString(model, X_CLASS_NAME);
     if (StringUtils.isNotBlank(xClassName)) {
       return xClassName;
     }
-    final String title = ApiTool.getNodeAsString(model, "title");
+    final String title = ApiTool.getNodeAsString(model, TITLE);
     if (StringUtils.isNotBlank(title)) {
       return title;
     }
@@ -125,7 +187,7 @@ public final class ModelBuilder {
       getTypeImports(listHashMap, fieldObject);
       if (StringUtils.isNotBlank(fieldObject.getImportClass())
           && !listHashMap.containsKey(fieldObject.getImportClass())
-          && !fieldObject.getDataType().containsType("enum")) {
+          && !fieldObject.getDataType().containsType(ENUM)) {
         listHashMap.put(StringUtils.capitalize(fieldObject.getImportClass()),
                         List.of(modelPackage + "." + StringUtils.capitalize(fieldObject.getImportClass())));
       }
@@ -204,7 +266,7 @@ public final class ModelBuilder {
       final String itemType = ApiTool.hasRef(ApiTool.getItems(schema)) ? resolveRefPojoName(ApiTool.getItems(schema), specFile, totalSchemas)
                                   : ApiTool.getType(ApiTool.getItems(schema));
       final var arrayField = SchemaFieldObject.builder()
-                                                .baseName("items")
+                                                .baseName(ITEMS)
                                                 .dataType(SchemaFieldObjectType.fromTypeList(TypeConstants.ARRAY, itemType))
                                                 .build();
       // Propagate item-leval and array-level restrictions when present
@@ -450,25 +512,25 @@ public final class ModelBuilder {
     while (restrictionList.hasNext()) {
       final var restriction = restrictionList.next();
       switch (restriction.getKey()) {
-        case "pattern":
+        case PATTERN:
           fieldObject.getRestrictions().setPattern(restriction.getValue().asText());
           break;
-        case "maxItems":
+        case MAX_ITEMS:
           fieldObject.getRestrictions().setMaxItems(restriction.getValue().asInt());
           break;
-        case "minItems":
+        case MIN_ITEMS:
           fieldObject.getRestrictions().setMinItems(restriction.getValue().asInt());
           break;
-        case "maxLength":
+        case MAX_LENGTH:
           fieldObject.getRestrictions().setMaxLength(restriction.getValue().asInt());
           break;
-        case "minLength":
+        case MIN_LENGTH:
           fieldObject.getRestrictions().setMinLength(restriction.getValue().asInt());
           break;
-        case "uniqueItems":
+        case UNIQUE_ITEMS:
           fieldObject.getRestrictions().setUniqueItems(restriction.getValue().asBoolean());
           break;
-        case "exclusiveMaximum":
+        case EXCLUSIVE_MAXIMUM:
           if (restriction.getValue().isBoolean()) {
             fieldObject.getRestrictions().setExclusiveMaximum(restriction.getValue().asBoolean());
           } else if (restriction.getValue().isNumber()) {
@@ -476,7 +538,7 @@ public final class ModelBuilder {
             fieldObject.getRestrictions().setExclusiveMaximum(true);
           }
           break;
-        case "exclusiveMinimum":
+        case EXCLUSIVE_MINIMUM:
           if (restriction.getValue().isBoolean()) {
             fieldObject.getRestrictions().setExclusiveMinimum(restriction.getValue().asBoolean());
           } else if (restriction.getValue().isNumber()) {
@@ -484,19 +546,19 @@ public final class ModelBuilder {
             fieldObject.getRestrictions().setExclusiveMinimum(true);
           }
           break;
-        case "multipleOf":
+        case MULTIPLE_OF:
           fieldObject.getRestrictions().setMultipleOf(restriction.getValue().asText());
           break;
-        case "maximum":
+        case MAXIMUM:
           fieldObject.getRestrictions().setMaximum(restriction.getValue().asText());
           break;
-        case "minimum":
+        case MINIMUM:
           fieldObject.getRestrictions().setMinimum(restriction.getValue().asText());
           break;
-        case "minProperties":
+        case MIN_PROPERTIES:
           fieldObject.getRestrictions().setMinProperties(restriction.getValue().asInt());
           break;
-        case "maxProperties":
+        case MAX_PROPERTIES:
           fieldObject.getRestrictions().setMaxProperties(restriction.getValue().asInt());
           break;
         default:
@@ -508,52 +570,52 @@ public final class ModelBuilder {
             final JsonNode propsNode = value.get("properties");
             if (propsNode != null && propsNode.isObject()) {
               for (final var child : propsNode) {
-                if (child.has("minLength") || child.has("maxLength")) {
-                  fieldObject.getRestrictions().getProperties().add("Size");
+                if (child.has(MIN_LENGTH) || child.has(MAX_LENGTH)) {
+                  fieldObject.getRestrictions().getProperties().add(SIZE_RESTRICTION);
                 }
-                if (child.has("pattern")) {
-                  fieldObject.getRestrictions().getProperties().add("Pattern");
+                if (child.has(PATTERN)) {
+                  fieldObject.getRestrictions().getProperties().add(PATTERN_RESTRICTION);
                 }
-                if (child.has("minimum") || child.has("maximum") || child.has("exclusiveMinimum") || child.has("exclusiveMaximum")) {
-                  fieldObject.getRestrictions().getProperties().add("Minimum");
-                  fieldObject.getRestrictions().getProperties().add("Maximum");
+                if (child.has(MINIMUM) || child.has(MAXIMUM) || child.has(EXCLUSIVE_MINIMUM) || child.has(EXCLUSIVE_MAXIMUM)) {
+                  fieldObject.getRestrictions().getProperties().add(MINIMUM_RESTRICTION);
+                  fieldObject.getRestrictions().getProperties().add(MAXIMUM_RESTRICTION);
                 }
                 if (child.has("format")) {
-                  fieldObject.getRestrictions().getProperties().add("Format");
+                  fieldObject.getRestrictions().getProperties().add(FORMAT_RESTRICTION);
                 }
-                if (child.has("multipleOf")) {
-                  fieldObject.getRestrictions().getProperties().add("MultipleOf");
+                if (child.has(MULTIPLE_OF)) {
+                  fieldObject.getRestrictions().getProperties().add(MULTIPLE_OF_RESTRICTION);
                 }
-                if (child.has("minItems") || child.has("maxItems") || child.has("uniqueItems")) {
-                  fieldObject.getRestrictions().getProperties().add("MinItems");
-                  fieldObject.getRestrictions().getProperties().add("MaxItems");
-                  fieldObject.getRestrictions().getProperties().add("UniqueItems");
+                if (child.has(MIN_ITEMS) || child.has(MAX_ITEMS) || child.has(UNIQUE_ITEMS)) {
+                  fieldObject.getRestrictions().getProperties().add(MIN_ITEMS_RESTRICTION);
+                  fieldObject.getRestrictions().getProperties().add(MAX_ITEMS_RESTRICTION);
+                  fieldObject.getRestrictions().getProperties().add(UNIQUE_ITEMS_RESTRICTION);
                 }
               }
             }
-            final JsonNode itemsNode = value.get("items");
+            final JsonNode itemsNode = value.get(ITEMS);
             if (itemsNode != null && itemsNode.isObject()) {
-              if (itemsNode.has("minLength") || itemsNode.has("maxLength")) {
-                fieldObject.getRestrictions().getProperties().add("Size");
+              if (itemsNode.has(MIN_LENGTH) || itemsNode.has(MAX_LENGTH)) {
+                fieldObject.getRestrictions().getProperties().add(SIZE_RESTRICTION);
               }
-              if (itemsNode.has("pattern")) {
-                fieldObject.getRestrictions().getProperties().add("Pattern");
+              if (itemsNode.has(PATTERN)) {
+                fieldObject.getRestrictions().getProperties().add(PATTERN_RESTRICTION);
               }
-              if (itemsNode.has("minimum") || itemsNode.has("maximum")) {
-                fieldObject.getRestrictions().getProperties().add("Minimum");
-                fieldObject.getRestrictions().getProperties().add("Maximum");
+              if (itemsNode.has(MINIMUM) || itemsNode.has(MAXIMUM)) {
+                fieldObject.getRestrictions().getProperties().add(MINIMUM_RESTRICTION);
+                fieldObject.getRestrictions().getProperties().add(MAXIMUM_RESTRICTION);
               }
-              if (itemsNode.has("multipleOf")) {
-                fieldObject.getRestrictions().getProperties().add("MultipleOf");
+              if (itemsNode.has(MULTIPLE_OF)) {
+                fieldObject.getRestrictions().getProperties().add(MULTIPLE_OF_RESTRICTION);
               }
             }
           }
         }
 
         if (fieldObject.getRestrictions().getProperties().isEmpty()) {
-          final var dir = Paths.get(System.getProperty("user.dir"), "target", "tmp-templates");
+          final var dir = Paths.get(System.getProperty("user.dir"), "target", TMP_TEMPLATES_FOLDER);
           Files.createDirectories(dir);
-          final var out = dir.resolve("missing-restrictions.log");
+          final var out = dir.resolve(MISSING_RESTRICTIONS_LOG);
           final String line = String.format("%s|%s|%s%n", fieldObject.getBaseName(), fieldObject.getDataType() == null ? "null" : fieldObject.getDataType().toString(),
                                             value == null ? "null" : value.toString().replaceAll("\\r?\\n", " "));
           Files.writeString(out, line, StandardCharsets.UTF_8, StandardOpenOption.CREATE, StandardOpenOption.APPEND);
@@ -993,7 +1055,7 @@ public final class ModelBuilder {
           // For string-based enums: uppercase and ensure it starts with a non-digit
           String candidate = StringUtils.upperCase(keyBase);
           if (candidate.isEmpty()) {
-            candidate = "EMPTY";
+            candidate = EMPTY_LITERAL;
           }
           if (Character.isDigit(candidate.charAt(0))) {
             candidate = "_" + candidate;
@@ -1024,14 +1086,14 @@ public final class ModelBuilder {
     }
     String s = raw.replace(".", "_DOT_");
     // Reemplaza cualquier caracter que no sea letra o dígito por '_'
-    s = s.replaceAll("[^A-Za-z0-9]", "_");
+    s = s.replaceAll(NON_ALPHANUMERIC, "_");
     // Colapsa múltiples '_' en uno solo
     s = s.replaceAll("_+", "_");
     // Elimina '_' iniciales o finales
     s = s.replaceAll("^_+|_+$", "");
     // Si queda vacío, devolver placeholder
     if (s.isEmpty()) {
-      return "EMPTY";
+      return EMPTY_LITERAL;
     }
     return s;
   }
@@ -1063,7 +1125,7 @@ public final class ModelBuilder {
     if (targetSchema != null) {
       final String schemaVersion = ApiTool.getNodeAsString(targetSchema, "schemaVersion");
       if (StringUtils.isNotBlank(schemaVersion)) {
-        final String sanitized = schemaVersion.replaceAll("[^A-Za-z0-9]", "_");
+        final String sanitized = schemaVersion.replaceAll(NON_ALPHANUMERIC, "_");
         pojoName = pojoName + "_v" + sanitized;
       }
     }

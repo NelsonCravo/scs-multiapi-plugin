@@ -8,7 +8,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.OffsetDateTime;
 import java.util.UUID;
 
-public class MessageWrapper<T, Y> {
+public class ${className}MessageWrapper<T, Y> {
 
   private T payload;
 
@@ -34,12 +34,12 @@ public class MessageWrapper<T, Y> {
 
   private String ceDataContentType;
 
-  private MessageWrapper(final Y key, final T payload) {
+  private ${className}MessageWrapper(final Y key, final T payload) {
     this.payload = payload;
     this.key = key;
   }
 
-  private MessageWrapper(final Y key, final T payload, final String correlationId, final String replyTo, final String ceSpecVersion, final String ceId,
+  private ${className}MessageWrapper(final Y key, final T payload, final String correlationId, final String replyTo, final String ceSpecVersion, final String ceId,
       final String ceType, final String ceSource, final String ceSubject, final String ceTime, final String ceDataSchema, final String ceDataContentType) {
     this.payload = payload;
     this.key = key;
@@ -151,11 +151,11 @@ public class MessageWrapper<T, Y> {
     this.ceDataContentType = ceDataContentType;
   }
 
-  public static MessageWrapperBuilder builder() {
-    return new MessageWrapperBuilder();
+  public static ${className}MessageWrapperBuilder builder() {
+    return new ${className}MessageWrapperBuilder();
   }
 
-  public static class MessageWrapperBuilder<T, Y> {
+  public static class ${className}MessageWrapperBuilder<T, Y> {
 
     private T payload;
 
@@ -181,68 +181,68 @@ public class MessageWrapper<T, Y> {
 
     private String ceDataContentType;
 
-    public MessageWrapperBuilder payload(final T payload) {
+    public ${className}MessageWrapperBuilder payload(final T payload) {
       this.payload = payload;
       return this;
     }
 
-    public MessageWrapperBuilder key(final Y key) {
+    public ${className}MessageWrapperBuilder key(final Y key) {
       this.key = key;
       return this;
     }
 
-    public MessageWrapperBuilder correlationId(final String correlationId) {
+    public ${className}MessageWrapperBuilder correlationId(final String correlationId) {
       this.correlationId = correlationId;
       return this;
     }
 
-    public MessageWrapperBuilder replyTo(final String replyTo) {
+    public ${className}MessageWrapperBuilder replyTo(final String replyTo) {
       this.replyTo = replyTo;
       return this;
     }
 
-    public MessageWrapperBuilder ceSpecVersion(final String ceSpecVersion) {
+    public ${className}MessageWrapperBuilder ceSpecVersion(final String ceSpecVersion) {
       this.ceSpecVersion = ceSpecVersion;
       return this;
     }
 
-    public MessageWrapperBuilder ceId(final String ceId) {
+    public ${className}MessageWrapperBuilder ceId(final String ceId) {
       this.ceId = ceId;
       return this;
     }
 
-    public MessageWrapperBuilder ceType(final String ceType) {
+    public ${className}MessageWrapperBuilder ceType(final String ceType) {
       this.ceType = ceType;
       return this;
     }
 
-    public MessageWrapperBuilder ceSource(final String ceSource) {
+    public ${className}MessageWrapperBuilder ceSource(final String ceSource) {
       this.ceSource = ceSource;
       return this;
     }
 
-    public MessageWrapperBuilder ceSubject(final String ceSubject) {
+    public ${className}MessageWrapperBuilder ceSubject(final String ceSubject) {
       this.ceSubject = ceSubject;
       return this;
     }
 
-    public MessageWrapperBuilder ceTime(final String ceTime) {
+    public ${className}MessageWrapperBuilder ceTime(final String ceTime) {
       this.ceTime = ceTime;
       return this;
     }
 
-    public MessageWrapperBuilder ceDataSchema(final String ceDataSchema) {
+    public ${className}MessageWrapperBuilder ceDataSchema(final String ceDataSchema) {
       this.ceDataSchema = ceDataSchema;
       return this;
     }
 
-  public MessageWrapperBuilder ceDataContentType(final String ceDataContentType) {
+  public ${className}MessageWrapperBuilder ceDataContentType(final String ceDataContentType) {
       this.ceDataContentType = ceDataContentType;
       return this;
     }
 
-    public MessageWrapper build() {
-      return new MessageWrapper(key, payload, correlationId, replyTo, ceSpecVersion, ceId, ceType, ceSource, ceSubject, ceTime, ceDataSchema, ceDataContentType);
+    public ${className}MessageWrapper build() {
+      return new ${className}MessageWrapper(key, payload, correlationId, replyTo, ceSpecVersion, ceId, ceType, ceSource, ceSubject, ceTime, ceDataSchema, ceDataContentType);
     }
   }
 
@@ -276,8 +276,8 @@ public class MessageWrapper<T, Y> {
     return builder.build();
   }
 
-  public static <T, Y> MessageWrapper<T, Y> fromCloudEvent(final CloudEvent event, final Y key, final T payload) {
-    return MessageWrapper.<T, Y>builder()
+  public static <T, Y> ${className}MessageWrapper<T, Y> fromCloudEvent(final CloudEvent event, final Y key, final T payload) {
+    return ${className}MessageWrapper.<T, Y>builder()
                          .payload(payload)
                          .key(key)
                          .correlationId(event.getId())

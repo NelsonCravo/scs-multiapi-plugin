@@ -59,6 +59,54 @@ public abstract class BaseAsyncApiHandler {
 
   protected static final String PUBLISH = "publish";
 
+  protected static final String ACTION = "action";
+
+  protected static final String PARAMETERS = "parameters";
+
+  protected static final String CORRELATION_ID = "correlationId";
+
+  protected static final String REPLY_TO = "replyTo";
+
+  protected static final String CAUSATION_ID = "causationId";
+
+  protected static final String SCHEMA_FORMAT = "schemaFormat";
+
+  protected static final String SCHEMA_VERSION = "schemaVersion";
+
+  protected static final String PROPERTIES = "properties";
+
+  protected static final String BINDING_VERSION = "bindingVersion";
+
+  protected static final String REPLY_SUFFIX = "-reply";
+
+  protected static final String CHANNEL_REGEX = "[a-zA-Z0-9._/#{}:+\\-]*";
+
+  protected static final String ACKS = "acks";
+
+  protected static final String PARTITIONS = "partitions";
+
+  protected static final String HEADERS = "headers";
+
+  protected static final String TOPIC_CONFIGURATION = "topicConfiguration";
+
+  protected static final String EXAMPLES = "examples";
+
+  protected static final String X_KEY_SELECTOR = "x-keySelector";
+
+  protected static final String MQTT = "mqtt";
+
+  protected static final String WS = "ws";
+
+  protected static final String WEBSOCKETS = "websockets";
+
+  protected static final String QOS = "qos";
+
+  protected static final String RETAIN = "retain";
+
+  protected static final String METHOD = "method";
+
+  protected static final String SUBPROTOCOL = "subprotocol";
+
   protected static final String OPERATION_ID = "operationId";
 
   protected static final String AVSC = "avsc";

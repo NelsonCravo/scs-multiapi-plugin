@@ -83,6 +83,8 @@ public class TemplateFactory extends CommonTemplateFactory {
 
   private String subscribeClassName = null;
 
+  private boolean modelOnly = false;
+
   public TemplateFactory(
       boolean enableOverwrite,
       final File targetFolder,
@@ -92,45 +94,49 @@ public class TemplateFactory extends CommonTemplateFactory {
   }
 
   public final void fillTemplates() throws IOException {
-    addToRoot(PUBLISH_METHODS, publishMethods);
-    addToRoot(SUBSCRIBE_METHODS, subscribeMethods);
-    addToRoot(STREAM_BRIDGE_METHODS, streamBridgeMethods);
+    if (!modelOnly) {
+      addToRoot(PUBLISH_METHODS, publishMethods);
+      addToRoot(SUBSCRIBE_METHODS, subscribeMethods);
+      addToRoot(STREAM_BRIDGE_METHODS, streamBridgeMethods);
 
-    applyFinalClassNaming();
+      applyFinalClassNaming();
 
-    for (final var method : publishMethods) {
-      String finalSupplierClassName = NameUtils.withSuffix(method.getClassName(), SUPPLIER_SUFFIX);
-      fillTemplate(
-          supplierFilePath,
-          finalSupplierClassName,
-          checkTemplate(method.getBindingType(), TemplateIndexConstants.TEMPLATE_API_SUPPLIERS));
-    }
+      for (final var method : publishMethods) {
+        String finalSupplierClassName = NameUtils.withSuffix(method.getClassName(), SUPPLIER_SUFFIX);
+        fillTemplate(
+            supplierFilePath,
+            finalSupplierClassName,
+            checkTemplate(method.getBindingType(), TemplateIndexConstants.TEMPLATE_API_SUPPLIERS));
+      }
 
-    for (final var method : subscribeMethods) {
-      String finalSubscribeClassName = NameUtils.withSuffix(method.getClassName(), CONSUMER_SUFFIX);
-      fillTemplate(
-          subscribeFilePath,
-          finalSubscribeClassName,
-          checkTemplate(method.getBindingType(), TemplateIndexConstants.TEMPLATE_API_CONSUMERS));
-    }
+      for (final var method : subscribeMethods) {
+        String finalSubscribeClassName = NameUtils.withSuffix(method.getClassName(), CONSUMER_SUFFIX);
+        fillTemplate(
+            subscribeFilePath,
+            finalSubscribeClassName,
+            checkTemplate(method.getBindingType(), TemplateIndexConstants.TEMPLATE_API_CONSUMERS));
+      }
 
-    for (final var method : streamBridgeMethods) {
-      String finalStreamBridgeClassName = NameUtils.withSuffix(method.getClassName(), BRIDGE_SUFFIX);
-      fillTemplate(
-          streamBridgeFilePath,
-          finalStreamBridgeClassName,
-          checkTemplate(method.getBindingType(), TemplateIndexConstants.TEMPLATE_API_STREAM_BRIDGE));
-    }
+      for (final var method : streamBridgeMethods) {
+        String finalStreamBridgeClassName = NameUtils.withSuffix(method.getClassName(), BRIDGE_SUFFIX);
+        fillTemplate(
+            streamBridgeFilePath,
+            finalStreamBridgeClassName,
+            checkTemplate(method.getBindingType(), TemplateIndexConstants.TEMPLATE_API_STREAM_BRIDGE));
+      }
 
-    if (schemaRegistryFilePath != null) {
-      fillTemplate(
-          schemaRegistryFilePath,
-          SCHEMA_REGISTRY_CLASS_NAME,
-          TemplateIndexConstants.TEMPLATE_SCHEMA_REGISTRY_CONFIG);
+      if (schemaRegistryFilePath != null) {
+        fillTemplate(
+            schemaRegistryFilePath,
+            SCHEMA_REGISTRY_CLASS_NAME,
+            TemplateIndexConstants.TEMPLATE_SCHEMA_REGISTRY_CONFIG);
+      }
     }
 
     generateTemplates();
-    generateInterfaces();
+    if (!modelOnly) {
+      generateInterfaces();
+    }
   }
 
   private String checkTemplate(final String bindingType, final String defaultTemplate) {
@@ -222,6 +228,10 @@ public class TemplateFactory extends CommonTemplateFactory {
   public final void setStreamBridgeClassName(final String className) {
     addToRoot(STREAM_BRIDGE_CLASS_NAME, className);
     this.streamBridgeClassName = className;
+  }
+
+  public final void setModelOnly(final boolean modelOnly) {
+    this.modelOnly = modelOnly;
   }
 
   public final void addSupplierMethod(
@@ -422,6 +432,9 @@ public class TemplateFactory extends CommonTemplateFactory {
   }
 
   public void processFilePaths(final SpecFile fileParameter, final String defaultApiPackage) {
+    if (modelOnly) {
+      return;
+    }
     var pathToCreate = convertPackageToTargetPath(fileParameter.getSupplier(), defaultApiPackage);
     if (Objects.nonNull(pathToCreate)) {
       setSupplierFilePath(processPath(pathToCreate));

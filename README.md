@@ -288,6 +288,7 @@ YML files as you want.
     <apiPackage>com.sngular.apigenerator.asyncapi.business_model.model.event.producer</apiPackage>
     <modelPackage>com.sngular.apigenerator.asyncapi.business_model.model.event</modelPackage>
   </streamBridge>
+  <modelOnly>true</modelOnly>
 </specFile>
   ```
 
@@ -310,6 +311,7 @@ YML files as you want.
       apiPackage = 'com.sngular.apigenerator.asyncapi.business_model.model.event.producer'
       modelPackage = 'com.sngular.apigenerator.asyncapi.business_model.model.event'
     }
+    modelOnly = true
   }
   overWriteModel = true
 }
@@ -351,6 +353,7 @@ can be configured in the plugin.
       created by the user. As the previous parameter, this is also optional.
       Check [how is the modelPackage set](#how-is-modelpackage-set) for more
       information about how his parameter works, and the values it could have.
+  - **modelOnly**: Optional boolean (default `false`). When `true`, only the model classes are generated; API classes/interfaces (asyncapi folder) are skipped.
   -  **dateFormat**: This parameter changes the format annotation for `LocalDate` fields.
       The syntax follow the [Java SimpleDateFormat](https://docs.oracle.com/javase/8/docs/api/java/text/SimpleDateFormat.html).
       The default value are `yyyy-MM-dd`.

@@ -19,6 +19,8 @@ class AsyncApiSpecFile {
 
   OperationParameter streamBridge = new OperationParameter()
 
+  Boolean modelOnly = Boolean.FALSE
+
   void setFilePath(final String filePath) {
     this.filePath = filePath
   }
@@ -37,6 +39,10 @@ class AsyncApiSpecFile {
 
   OperationParameter getStreamBridge() {
     return streamBridge
+  }
+
+  Boolean getModelOnly() {
+    return modelOnly
   }
 
   void supplier(Closure configuration) {

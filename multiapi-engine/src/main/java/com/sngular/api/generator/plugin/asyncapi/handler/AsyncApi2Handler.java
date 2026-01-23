@@ -338,13 +338,12 @@ public class AsyncApi2Handler extends BaseAsyncApiHandler {
   protected Pair<String, JsonNode> processPayload(final OperationParameterObject operationObject, final String messageName, final JsonNode payload, final FileLocation ymlParent)
       throws IOException {
     final String namespace;
-    final String suffix = operationObject.getModelNameSuffix();
     if (payload.has(REF)) {
       namespace = processMessageRef(payload, operationObject.getModelPackage(), ymlParent);
     } else {
       namespace = operationObject.getModelPackage() + PACKAGE_SEPARATOR_STR + messageName;
     }
-    return Pair.of(appendSuffixToNamespace(namespace, suffix), payload);
+    return Pair.of(namespace, payload);
   }
 
   @Override

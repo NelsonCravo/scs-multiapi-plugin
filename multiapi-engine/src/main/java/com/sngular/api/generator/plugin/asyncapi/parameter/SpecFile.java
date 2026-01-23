@@ -25,4 +25,7 @@ public class SpecFile {
 
   private OperationParameterObject streamBridge;
 
+  @Builder.Default
+  private boolean modelOnly = false;
+
 }

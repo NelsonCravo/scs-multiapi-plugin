@@ -11,6 +11,7 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Map;
 import java.util.Objects;
 
@@ -172,20 +173,23 @@ public class TemplateFactory extends CommonTemplateFactory {
 
 
   private void applyFinalClassNaming() {
-    for (MethodObject method : publishMethods) {
-      String base = method.getClassName();
-      String finalName = NameUtils.withSuffix(base, SUPPLIER_SUFFIX);
-      method.setClassName(finalName);
-    }
-    for (MethodObject method : subscribeMethods) {
-      String base = method.getClassName();
-      String finalName = NameUtils.withSuffix(base, CONSUMER_SUFFIX);
-      method.setClassName(finalName);
-    }
-    for (MethodObject method : streamBridgeMethods) {
-      String base = method.getClassName();
-      String finalName = NameUtils.withSuffix(base, STREAM_BRIDGE_SUFFIX);
-      method.setClassName(finalName);
+    applyFinalClassNaming(publishMethods, SUPPLIER_SUFFIX);
+    applyFinalClassNaming(subscribeMethods, CONSUMER_SUFFIX);
+    applyFinalClassNaming(streamBridgeMethods, STREAM_BRIDGE_SUFFIX);
+  }
+
+  private void applyFinalClassNaming(final List<MethodObject> methods, final String suffix) {
+    final ListIterator<MethodObject> it = methods.listIterator();
+    while (it.hasNext()) {
+      final MethodObject method = it.next();
+      final String base = method.getClassName();
+      final String finalName = NameUtils.withSuffix(base, suffix);
+      if (finalName.equals(base)) {
+        continue;
+      }
+      final String packageName = method.getClassNamespace();
+      final String fqn = (StringUtils.isNotBlank(packageName) ? packageName + "." : "") + finalName;
+      it.set(method.toBuilder().classNamespace(fqn).build());
     }
   }
 

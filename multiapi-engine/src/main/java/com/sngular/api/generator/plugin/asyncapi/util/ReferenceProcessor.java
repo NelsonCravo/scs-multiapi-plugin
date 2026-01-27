@@ -1,6 +1,8 @@
 package com.sngular.api.generator.plugin.asyncapi.util;
 
 import java.io.IOException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -9,8 +11,10 @@ import java.util.Objects;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.sngular.api.generator.plugin.asyncapi.exception.FileSystemException;
 import com.sngular.api.generator.plugin.common.files.FileLocation;
+import com.sngular.api.generator.plugin.common.files.DirectoryFileLocation;
 import com.sngular.api.generator.plugin.common.tools.ApiTool;
 import com.sngular.api.generator.plugin.common.tools.MapperUtil;
+import com.sngular.api.generator.plugin.common.tools.PathUtil;
 import lombok.Builder;
 import org.apache.commons.lang3.StringUtils;
 
@@ -39,6 +43,10 @@ public final class ReferenceProcessor {
   }
 
   public void processReference(final JsonNode node, final String referenceLink) {
+    processReference(node, referenceLink, ymlParent);
+  }
+
+  private void processReference(final JsonNode node, final String referenceLink, final FileLocation currentParent) {
     if (alreadyProcessed == null) {
       alreadyProcessed = new ArrayList<>();
     }
@@ -49,15 +57,16 @@ public final class ReferenceProcessor {
       alreadyProcessed.add(calculatedKey);
       try {
         if (referenceLink.toLowerCase().contains(YML) || referenceLink.toLowerCase().contains(YAML) || referenceLink.toLowerCase().contains(JSON)) {
-          component = solveRef(ymlParent, path[0], path[1], totalSchemas);
+          final FileLocation targetParent = resolveParent(currentParent, path[0]);
+          component = solveRef(targetParent, path[0], path[1], totalSchemas);
         } else {
           if (referenceLink.toLowerCase().contains(AVSC)) {
-            component = solveRef(ymlParent, path[0], path[1], totalSchemas);
+            component = solveRef(currentParent, path[0], path[1], totalSchemas);
           } else {
             component = node.at(MapperUtil.getPathToModel(referenceLink)).get(MapperUtil.getModel(referenceLink));
           }
           if (Objects.nonNull(component)) {
-            checkReference(node, component);
+            checkReference(node, component, currentParent);
           }
         }
       } catch (final IOException e) {
@@ -77,7 +86,7 @@ public final class ReferenceProcessor {
       if (StringUtils.isNotEmpty(reference)) {
         if (node.at(MapperUtil.getPathToModel(reference)).has(MapperUtil.getModel(reference))) {
           returnNode = node.at(MapperUtil.getPathToModel(reference)).get(MapperUtil.getModel(reference));
-          checkReference(node, returnNode);
+          checkReference(node, returnNode, ymlParent);
         } else {
           returnNode = node;
         }
@@ -93,10 +102,20 @@ public final class ReferenceProcessor {
   }
 
   private void checkReference(
-      final JsonNode mainNode, final JsonNode node) {
+      final JsonNode mainNode, final JsonNode node, final FileLocation currentParent) {
     final var localReferences = node.findValues(REF);
     if (!localReferences.isEmpty()) {
-      localReferences.forEach(localReference -> processReference(mainNode, ApiTool.getNodeAsString(localReference)));
+      localReferences.forEach(localReference -> processReference(mainNode, ApiTool.getNodeAsString(localReference), currentParent));
     }
+  }
+
+  private FileLocation resolveParent(final FileLocation baseParent, final String path) {
+    Path resolvedPath;
+    if (PathUtil.isAbsolutePath(path)) {
+      resolvedPath = Paths.get(path).normalize();
+    } else {
+      resolvedPath = Paths.get(baseParent.path()).resolve(path).normalize();
+    }
+    return new DirectoryFileLocation(resolvedPath.getParent());
   }
 }

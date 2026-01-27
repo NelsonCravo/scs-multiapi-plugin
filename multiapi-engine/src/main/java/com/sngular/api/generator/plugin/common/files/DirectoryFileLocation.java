@@ -35,7 +35,13 @@ public class DirectoryFileLocation implements FileLocation {
         return new FileInputStream(new File(filename));
       } else {
         // For relative paths, resolve against the parent directory
-        return new FileInputStream(path.resolve(filename).toFile());
+        File target = path.resolve(filename).toFile();
+        if (!target.exists() && filename.contains("/")) {
+          // Fallback: if the full relative path does not exist, try only the last segment
+          final String lastSegment = filename.substring(filename.lastIndexOf('/') + 1);
+          target = path.resolve(lastSegment).toFile();
+        }
+        return new FileInputStream(target);
       }
     } catch (final IOException e) {
       throw new FileSystemException(e.getMessage());

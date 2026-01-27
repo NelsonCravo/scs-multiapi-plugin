@@ -22,6 +22,7 @@ import com.sngular.api.generator.plugin.asyncapi.exception.ExternalRefComponentN
 import com.sngular.api.generator.plugin.asyncapi.exception.FileSystemException;
 import com.sngular.api.generator.plugin.asyncapi.exception.InvalidAsyncAPIException;
 import com.sngular.api.generator.plugin.asyncapi.exception.InvalidAvroException;
+import com.sngular.api.generator.plugin.asyncapi.resolver.DiscriminatorMappingResolver;
 import com.sngular.api.generator.plugin.asyncapi.model.ProcessBindingsResult;
 import com.sngular.api.generator.plugin.asyncapi.model.ProcessMethodResult;
 import com.sngular.api.generator.plugin.asyncapi.parameter.OperationParameterObject;
@@ -124,6 +125,8 @@ public class AsyncApi3Handler extends BaseAsyncApiHandler {
     ApiTool.getComponent(node, MESSAGES).forEachRemaining(
         message -> getMessageSchemas(message.getKey(), message.getValue(), ymlParent, totalSchemas)
                                                          );
+
+    collectDiscriminatorMappings(node, ymlParent, totalSchemas);
 
     getChannels(node).forEachRemaining(
         channel -> getChannelSchemas(channel.getValue(), totalSchemas, ymlParent)
@@ -643,6 +646,21 @@ public class AsyncApi3Handler extends BaseAsyncApiHandler {
 
   private Iterator<Entry<String, JsonNode>> getChannels(final JsonNode node) {
     return ApiTool.hasNode(node, CHANNELS) ? ApiTool.getFieldIterator(node, CHANNELS) : Collections.emptyIterator();
+  }
+
+  private void collectDiscriminatorMappings(final JsonNode root, final FileLocation ymlParent, final Map<String, JsonNode> totalSchemas) {
+    ApiTool.getComponent(root, SCHEMAS).forEachRemaining(schemaEntry -> {
+      final JsonNode schema = schemaEntry.getValue();
+      if (schema.has("discriminator") && schema.get("discriminator").has("mapping")) {
+        final JsonNode mappingNode = schema.get("discriminator").get("mapping");
+        mappingNode.fieldNames().forEachRemaining(label -> {
+          final JsonNode resolved = DiscriminatorMappingResolver.resolve(mappingNode.get(label).asText(), ymlParent, root);
+          if (!resolved.isMissingNode()) {
+            totalSchemas.putIfAbsent(SCHEMAS.toUpperCase() + SLASH + MapperUtil.getSchemaKey(label), resolved);
+          }
+        });
+      }
+    });
   }
 
   private void getMessageSchemas(

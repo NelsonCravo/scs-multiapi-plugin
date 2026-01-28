@@ -1,0 +1,9 @@
+components:
+  schemas:
+    ComponentTest:
+      type: object
+      properties:
+        amount:
+          type: number
+        currency:
+          type: string

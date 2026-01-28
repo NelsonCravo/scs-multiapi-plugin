@@ -1,0 +1,15 @@
+components:
+  schemas:
+    Caller:
+      oneOf:
+        - $ref: '#/components/schemas/CallerBase'
+        - $ref: './ComponentTest.yaml#/components/schemas/ComponentTest'
+      discriminator:
+        propertyName: type
+        mapping:
+          componentTest: './ComponentTest.yaml#/components/schemas/ComponentTest'
+    CallerBase:
+      type: object
+      properties:
+        id:
+          type: string

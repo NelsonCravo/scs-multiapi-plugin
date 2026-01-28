@@ -426,6 +426,18 @@ public class AsyncApiGeneratorFixtures {
                       .build())
               .build());
 
+  static final List<SpecFile> TEST_EXTERNAL_REF_CHAIN =
+      List.of(
+          SpecFile.builder()
+              .filePath("asyncapigenerator/v3/testExternalRefChain/event-api.yml")
+              .consumer(
+                  OperationParameterObject.builder()
+                      .ids("receiveBanana")
+                      .apiPackage("com.sngular.scsplugin.externalrefchain.consumer")
+                      .modelPackage("com.sngular.scsplugin.externalrefchain.model")
+                      .build())
+              .build());
+
   static final String TARGET = "target";
 
   static final String GENERATED = "generated/";
@@ -1173,5 +1185,17 @@ public class AsyncApiGeneratorFixtures {
             Collections.emptyList(),
             null)
             && modelTest(path, expectedConsumerModelSchemaFiles, DEFAULT_CONSUMER_MODEL_FOLDER);
+  }
+
+  static Function<Path, Boolean> validateTestExternalRefChain() {
+    return path -> {
+      final Path target = path.resolve(TARGET);
+      final Path modelDir = target.resolve(GENERATED + "com/sngular/scsplugin/externalrefchain/model");
+      Assertions.assertThat(modelDir).exists().isDirectory();
+      Assertions.assertThat(modelDir.resolve("ComponentTest.java")).exists();
+      Assertions.assertThat(modelDir.resolve("Caller.java")).exists();
+      Assertions.assertThat(modelDir.resolve("components")).doesNotExist();
+      return Boolean.TRUE;
+    };
   }
 }

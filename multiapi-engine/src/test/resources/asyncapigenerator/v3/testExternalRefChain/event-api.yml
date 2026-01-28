@@ -1,0 +1,24 @@
+asyncapi: 3.0.0
+info:
+  title: External Ref Chain Test
+  version: "1.0.0"
+channels:
+  bananaChannel:
+    address: banana
+    messages:
+      ChainedMessage:
+        $ref: "#/components/messages/ChainedMessage"
+operations:
+  receiveBanana:
+    action: receive
+    channel:
+      $ref: "#/channels/bananaChannel"
+    messages:
+      - $ref: "#/components/messages/ChainedMessage"
+components:
+  messages:
+    ChainedMessage:
+      name: "ChainedMessage"
+      contentType: "application/json"
+      payload:
+        $ref: "./components/schemas/Caller.yaml#/components/schemas/Caller"

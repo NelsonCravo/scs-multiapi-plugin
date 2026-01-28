@@ -50,6 +50,7 @@ public final class ReferenceProcessor {
     if (alreadyProcessed == null) {
       alreadyProcessed = new ArrayList<>();
     }
+    FileLocation effectiveParent = currentParent;
     final String[] path = MapperUtil.splitReference(referenceLink);
     final JsonNode component;
     final var calculatedKey = MapperUtil.getRefSchemaKey(referenceLink);
@@ -57,13 +58,13 @@ public final class ReferenceProcessor {
       alreadyProcessed.add(calculatedKey);
       try {
         if (referenceLink.toLowerCase().contains(YML) || referenceLink.toLowerCase().contains(YAML) || referenceLink.toLowerCase().contains(JSON)) {
-          final FileLocation targetParent = resolveParent(currentParent, path[0]);
+          final FileLocation targetParent = resolveParent(effectiveParent, path[0]);
           component = solveRef(targetParent, path[0], path[1], totalSchemas);
           // Ensure nested references are resolved relative to the external file we just loaded
-          currentParent = targetParent;
+          effectiveParent = targetParent;
         } else {
           if (referenceLink.toLowerCase().contains(AVSC)) {
-            component = solveRef(currentParent, path[0], path[1], totalSchemas);
+            component = solveRef(effectiveParent, path[0], path[1], totalSchemas);
           } else {
             component = node.at(MapperUtil.getPathToModel(referenceLink)).get(MapperUtil.getModel(referenceLink));
           }
@@ -74,7 +75,7 @@ public final class ReferenceProcessor {
       if (Objects.nonNull(component)) {
         totalSchemas.put(calculatedKey, component);
         // Resolve nested references using the correct parent (the file that declared them)
-        checkReference(node, component, currentParent);
+        checkReference(node, component, effectiveParent);
       }
     }
   }

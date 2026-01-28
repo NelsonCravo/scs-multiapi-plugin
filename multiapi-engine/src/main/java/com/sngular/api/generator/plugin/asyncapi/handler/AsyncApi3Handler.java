@@ -4,6 +4,8 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URISyntaxException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -31,11 +33,13 @@ import com.sngular.api.generator.plugin.asyncapi.util.AsyncApiUtil;
 import com.sngular.api.generator.plugin.asyncapi.util.BindingTypeEnum;
 import com.sngular.api.generator.plugin.asyncapi.util.FactoryTypeEnum;
 import com.sngular.api.generator.plugin.asyncapi.util.ReferenceProcessor;
+import com.sngular.api.generator.plugin.common.files.DirectoryFileLocation;
 import com.sngular.api.generator.plugin.common.files.FileLocation;
 import com.sngular.api.generator.plugin.common.model.CommonSpecFile;
 import com.sngular.api.generator.plugin.common.tools.ApiTool;
 import com.sngular.api.generator.plugin.common.tools.MapperContentUtil;
 import com.sngular.api.generator.plugin.common.tools.MapperUtil;
+import com.sngular.api.generator.plugin.common.tools.PathUtil;
 import com.sngular.api.generator.plugin.common.tools.SchemaUtil;
 import freemarker.template.TemplateException;
 import org.apache.commons.lang3.StringUtils;
@@ -636,12 +640,37 @@ public class AsyncApi3Handler extends BaseAsyncApiHandler {
     if (ApiTool.hasNode(message, PAYLOAD)) {
       payloadNode = ApiTool.getNode(message, PAYLOAD);
     } else if (ApiTool.hasRef(message)) {
-      final var solvedMessage = SchemaUtil.solveRef(ApiTool.getRefValue(message), totalSchemas, ymlParent.path());
-      payloadNode = solvePayload(solvedMessage, totalSchemas, ymlParent);
+      final String refValue = ApiTool.getRefValue(message);
+      final FileLocation effectiveParent = resolveParentForRef(ymlParent, refValue);
+      final var solvedMessage = SchemaUtil.solveRef(refValue, totalSchemas, effectiveParent.path());
+      payloadNode = solvePayload(solvedMessage, totalSchemas, effectiveParent);
     } else {
       payloadNode = message;
     }
     return payloadNode;
+  }
+
+  /**
+   * When resolving a $ref that points to another file, the base directory for any subsequent
+   * relative references must be the directory of the caller (the file that declared the $ref).
+   * This method computes that directory, falling back to the current parent when the reference
+   * is internal.
+   */
+  private FileLocation resolveParentForRef(final FileLocation currentParent, final String refValue) {
+    final String filePart = StringUtils.substringBefore(refValue, "#");
+    if (StringUtils.isBlank(filePart)) {
+      return currentParent;
+    }
+
+    Path resolvedPath;
+    if (PathUtil.isAbsolutePath(filePart)) {
+      resolvedPath = Paths.get(filePart).normalize();
+    } else {
+      resolvedPath = Paths.get(currentParent.path()).resolve(filePart).normalize();
+    }
+
+    final Path parent = resolvedPath.getParent();
+    return parent != null ? new DirectoryFileLocation(parent) : currentParent;
   }
 
   private Iterator<Entry<String, JsonNode>> getChannels(final JsonNode node) {

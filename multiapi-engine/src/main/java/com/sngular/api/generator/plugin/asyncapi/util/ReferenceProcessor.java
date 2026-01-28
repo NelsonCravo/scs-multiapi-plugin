@@ -60,14 +60,12 @@ public final class ReferenceProcessor {
         if (referenceLink.toLowerCase().contains(YML) || referenceLink.toLowerCase().contains(YAML) || referenceLink.toLowerCase().contains(JSON)) {
           final FileLocation targetParent = resolveParent(effectiveParent, path[0]);
           component = solveRef(targetParent, path[0], path[1], totalSchemas);
-          // Ensure nested references are resolved relative to the external file we just loaded
+          // Nested references inside that external document must now resolve relative to *that* document
           effectiveParent = targetParent;
+        } else if (referenceLink.toLowerCase().contains(AVSC)) {
+          component = solveRef(effectiveParent, path[0], path[1], totalSchemas);
         } else {
-          if (referenceLink.toLowerCase().contains(AVSC)) {
-            component = solveRef(effectiveParent, path[0], path[1], totalSchemas);
-          } else {
-            component = node.at(MapperUtil.getPathToModel(referenceLink)).get(MapperUtil.getModel(referenceLink));
-          }
+          component = node.at(MapperUtil.getPathToModel(referenceLink)).get(MapperUtil.getModel(referenceLink));
         }
       } catch (final IOException e) {
         throw new FileSystemException(e);

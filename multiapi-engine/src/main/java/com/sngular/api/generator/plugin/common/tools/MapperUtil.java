@@ -248,6 +248,37 @@ public class MapperUtil {
     return reference.substring(calculateStart(reference), reference.lastIndexOf("/"));
   }
 
+  /**
+   * Extracts a stable class base-name from a $ref value, dropping fragments, directories and file extensions.
+   * Examples:
+   *   "./schemas/Banana.yaml"        -> "Banana"
+   *   "./Pai.yaml#/components/Pai"   -> "Pai"
+   *   "#/components/schemas/Orange"  -> "Orange"
+   */
+  public static String getRefBaseName(final String reference) {
+    if (StringUtils.isBlank(reference)) {
+      return reference;
+    }
+
+    // Remove JSON Pointer fragment
+    String withoutFragment = StringUtils.substringBefore(reference, "#");
+
+    // Pick last path segment (handles both / and \ separators)
+    String lastSegment = StringUtils.substringAfterLast(withoutFragment, "/");
+    lastSegment = StringUtils.substringAfterLast(lastSegment, "\\");
+    if (StringUtils.isBlank(lastSegment)) {
+      lastSegment = withoutFragment;
+    }
+
+    // Drop common spec extensions
+    lastSegment = StringUtils.removeEndIgnoreCase(lastSegment, ".yaml");
+    lastSegment = StringUtils.removeEndIgnoreCase(lastSegment, ".yml");
+    lastSegment = StringUtils.removeEndIgnoreCase(lastSegment, ".json");
+    lastSegment = StringUtils.removeEndIgnoreCase(lastSegment, ".avsc");
+
+    return capitalizeFileName(lastSegment);
+  }
+
   private static int calculateStart(final String reference) {
     return StringUtils.startsWith(reference, "#") ? 1 : 0;
   }

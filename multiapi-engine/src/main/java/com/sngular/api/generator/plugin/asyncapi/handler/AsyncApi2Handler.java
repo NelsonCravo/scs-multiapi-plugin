@@ -506,25 +506,13 @@ public class AsyncApi2Handler extends BaseAsyncApiHandler {
 
   @Override
   protected String processModelPackage(final String extractedPackage, final String modelPackage) {
-    final String processedPackage;
+    final String baseName = MapperUtil.getRefBaseName(extractedPackage);
+
     if (modelPackage != null) {
-      if (extractedPackage.contains(PACKAGE_SEPARATOR_STR) || extractedPackage.contains(SLASH)) {
-        final var splitPackage = MapperUtil.splitName(extractedPackage);
-        final var className = splitPackage[splitPackage.length - 1];
-        processedPackage = modelPackage + PACKAGE_SEPARATOR_STR + StringUtils.capitalize(className);
-      } else {
-        processedPackage = modelPackage + MapperUtil.capitalizeWithPrefix(extractedPackage);
-      }
-    } else if (extractedPackage.contains(PACKAGE_SEPARATOR_STR)) {
-      final var splitPackage = MapperUtil.splitName(extractedPackage);
-      final var className = splitPackage[splitPackage.length - 1];
-      processedPackage =
-          StringUtils.join(PACKAGE_SEPARATOR_STR, Arrays.spliterator(splitPackage, 0, splitPackage.length)) + PACKAGE_SEPARATOR_STR + StringUtils.capitalize(className);
-    } else {
-      processedPackage = DEFAULT_ASYNCAPI_MODEL_PACKAGE + MapperUtil.capitalizeWithPrefix(extractedPackage);
+      return modelPackage + PACKAGE_SEPARATOR_STR + StringUtils.capitalize(baseName);
     }
 
-    return processedPackage;
+    return DEFAULT_ASYNCAPI_MODEL_PACKAGE + PACKAGE_SEPARATOR_STR + StringUtils.capitalize(baseName);
   }
 
   @Override

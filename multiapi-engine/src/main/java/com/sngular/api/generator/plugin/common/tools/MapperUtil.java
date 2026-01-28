@@ -205,16 +205,13 @@ public class MapperUtil {
   }
 
   public static String getNameFromFile(final String filePath) {
-    // Normalize leading "./" and extract the filename without extension
     final String cleanedPath = StringUtils.removeStart(filePath, "./");
-    final int lastSeparator = Math.max(cleanedPath.lastIndexOf('/'), cleanedPath.lastIndexOf('\\'));
-    final String directories = lastSeparator >= 0 ? cleanedPath.substring(0, lastSeparator) : "";
-    final String fileName = lastSeparator >= 0 ? cleanedPath.substring(lastSeparator + 1) : cleanedPath;
+    final String fileName = cleanedPath.contains("/") || cleanedPath.contains("\\")
+                            ? cleanedPath.substring(Math.max(cleanedPath.lastIndexOf('/'), cleanedPath.lastIndexOf('\\')) + 1)
+                            : cleanedPath;
     final int lastDot = fileName.lastIndexOf('.');
     final String baseName = lastDot > 0 ? fileName.substring(0, lastDot) : fileName;
-
-    final String combinedPath = StringUtils.isNotBlank(directories) ? directories + "/" + baseName : baseName;
-    return capitalizeFileName(combinedPath.replace("\\/", "."));
+    return capitalizeFileName(baseName);
   }
 
   public static String capitalizeFileName(final String name) {
